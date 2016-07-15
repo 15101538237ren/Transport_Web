@@ -18,3 +18,4 @@ def region(request):
     table_1=table_arr[0]
     data_points=get_point_in_region(table_1,slat,slng,elat,elng)
     return success_response(str(len(data_points)))
+def show_two_point_set(request):
