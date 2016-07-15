@@ -90,6 +90,61 @@
         alert('请在chrome、safari、IE8+以上浏览器查看本示例');
     }
 
+
+   /* var status = 2,startPoint,endPoint;
+
+    map.addEventListener("click",function(e){
+        status ++;
+        status = 1+ (status-1)%2;
+        if (status ==1){
+            startPoint = new Point(e.point.lng,e.point.lat);
+        }else{
+            endPoint = new Point(e.point.lng,e.point.lat);
+        }
+    });*/
+
+    var lushu;
+    // 实例化一个驾车导航用来生成路线
+    var drv = new BMap.DrivingRoute('北京', {
+        onSearchComplete: function(res) {
+            if (drv.getStatus() == BMAP_STATUS_SUCCESS) {
+                var arrPois = res.getPlan(0).getRoute(0).getPath();
+                var pathstr = "var data = {\"data\":["
+                for(var i=0; i<arrPois.length;i++){
+                    pathstr += "["+ arrPois[i].lng + "," + arrPois[i].lat +"],";
+                }
+                pathstr = pathstr + "],\"total\":" + arrPois.length + ",\"rt_loc_cnt\":" + arrPois.length + ",\"errorno\": 0,\"NearestTime\": " +
+                        "\"2014-08-29 15:20:00\",\"userTime\": \"2014-08-29 15:32:11\"}"
+                console.log(pathstr);
+                map.addOverlay(new BMap.Polyline(arrPois, {strokeColor: '#111'}));
+                map.setViewport(arrPois);
+                lushu = new BMapLib.LuShu(map,arrPois,{
+                    defaultContent:"",//"从天安门到百度大厦"
+                    autoView:true,//是否开启自动视野调整，如果开启那么路书在运动过程中会根据视野自动调整
+                    icon  : new BMap.Icon('car.png', new BMap.Size(52,26),{anchor : new BMap.Size(27, 13)}),
+                    speed: 4500,
+                    enableRotation:true,//是否设置marker随着道路的走向进行旋转
+                    landmarkPois: [
+                        {lng:116.314782,lat:39.913508,html:'加油站',pauseTime:2},
+                        {lng:116.315391,lat:39.964429,html:'高速公路收费<div><img src="http://map.baidu.com/img/logo-map.gif"/></div>',pauseTime:3},
+                        {lng:116.381476,lat:39.974073,html:'肯德基早餐<div><img src="http://ishouji.baidu.com/resource/images/map/show_pic04.gif"/></div>',pauseTime:2}
+                    ]});
+            }
+        }
+    });
+    //drv.search('万寿路口东', '西单路口东');
+    //path1
+    var startPoint = new BMap.Point(116.527417,39.98056);
+    var endPoint = new BMap.Point(116.538403,39.959354);
+
+    //path2
+    //var startPoint = new BMap.Point(116.538535,39.959418);
+    //var endPoint = new BMap.Point(116.527738,39.980389);
+
+
+    drv.search(startPoint,endPoint);
+
+
     var overlays = [];
 	var overlaycomplete = function(e){
         overlays.push(e.overlay);
@@ -163,6 +218,9 @@
         }
         overlays.length = 0
     }
+
+
+
 </script>
 </body>
 </html>
