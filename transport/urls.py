@@ -1,6 +1,6 @@
 from django.conf.urls import url
 
-from . import views
+from transport import views
 
 urlpatterns = [
     url(r'^region', views.region, name='region'),
