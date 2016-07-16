@@ -48,8 +48,10 @@
     <script type="text/javascript" src="http://api.map.baidu.com/api?v=2.0&ak=eM0GfCwd27kZRyM49ZOkvkOaidDXz6Wf"></script>
     <script type="text/javascript" src="http://api.map.baidu.com/library/DrawingManager/1.4/src/DrawingManager_min.js"></script>
     <link rel="stylesheet" href="http://api.map.baidu.com/library/DrawingManager/1.4/src/DrawingManager_min.css" />
-    <script type="text/javascript" src="{% static "assets/path1.js" %}"></script>
-    <script type="text/javascript" src="{% static "assets/path2.js" %}"></script>
+    <!--<script type="text/javascript" src="{# {% static "assets/path1.js" %} #}"></script>
+    <script type="text/javascript" src="{# {% static "assets/path2.js" %} #}"></script>-->
+    <script type="text/javascript" src="{% static "assets/pathpoints1.js" %}"></script>
+    <script type="text/javascript" src="{% static "assets/pathpoints2.js" %}"></script>
     <script type="text/javascript" src="{% static "js/jquery-1.11.3.min.js" %}"></script>
 
     <link rel="stylesheet" type="text/css" media="screen" href="{% static "css/jquery-confirm.min.css" %}" />
@@ -73,11 +75,11 @@
 
     if (document.createElement('canvas').getContext) {  // 判断当前浏览器是否支持绘制海量点
         var points = [];  // 添加海量点数据
-        for (var i = 0; i < path1.data.length; i++) {
-            points.push(new BMap.Point(path1.data[i][0], path1.data[i][1]));
+        for (var i = 0; i < pathpoints1.data.length; i++) {
+            points.push(new BMap.Point(pathpoints1.data[i][0], pathpoints1.data[i][1]));
         }
         var options = {
-            size: BMAP_POINT_SIZE_TINY,
+            size: BMAP_POINT_SIZE_SMALLER,
             //shape: BMAP_POINT_SHAPE_STAR,
             color: '#ff0000'
         };
@@ -89,11 +91,11 @@
         //单击获取点击的经纬度
 
         var points2 = [];  // 添加海量点数据
-        for (var i = 0; i < path2.data.length; i++) {
-            points2.push(new BMap.Point(path2.data[i][0], path2.data[i][1]));
+        for (var i = 0; i < pathpoints2.data.length; i++) {
+            points2.push(new BMap.Point(pathpoints2.data[i][0], pathpoints2.data[i][1]));
         }
         var options2 = {
-            size: BMAP_POINT_SIZE_TINY,
+            size: BMAP_POINT_SIZE_SMALLER,
             //shape: BMAP_POINT_SHAPE_STAR,
             color: '#0000ff'
         };

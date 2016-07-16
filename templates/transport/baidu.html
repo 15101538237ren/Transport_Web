@@ -50,6 +50,8 @@
     <link rel="stylesheet" href="http://api.map.baidu.com/library/DrawingManager/1.4/src/DrawingManager_min.css" />
     <script type="text/javascript" src="{% static "js/data.js" %}"></script>
     <script type="text/javascript" src="{% static "js/jquery-1.11.3.min.js" %}"></script>
+    <script type="text/javascript" src="{% static "assets/path_1.js" %}"></script>
+    <script type="text/javascript" src="{% static "assets/path_2.js" %}"></script>
 
     <link rel="stylesheet" type="text/css" media="screen" href="{% static "css/jquery-confirm.min.css" %}" />
     <script type="text/javascript" src="{% static "js/jquery-confirm.min.js" %}" charset="UTF-8"></script>
@@ -72,9 +74,18 @@
 
     if (document.createElement('canvas').getContext) {  // 判断当前浏览器是否支持绘制海量点
         var points = [];  // 添加海量点数据
+        console.log("var pathpoints = { \"data\":[");
+        var pointsNum = 0;
         for (var i = 0; i < data.data.length; i++) {
             points.push(new BMap.Point(data.data[i][0], data.data[i][1]));
+            direction = checkPoint(data.data[i][0],data.data[i][1]);
+            if(direction != 0) {
+                console.log("[" + data.data[i][0] + "," + data.data[i][1] + "," + direction + "],");
+                pointsNum ++ ;
+            }
         }
+        console.log("],\"total\":"+pointsNum + ",\"rt_loc_cnt\":"+pointsNum+",\"errorno\": 0,\"NearestTime\": \"2014-08-29 15:20:00\"," +
+                "\"userTime\": \"2014-08-29 15:32:11\"}");
         var options = {
             size: BMAP_POINT_SIZE_TINY,
             //shape: BMAP_POINT_SHAPE_STAR,
@@ -90,18 +101,47 @@
         alert('请在chrome、safari、IE8+以上浏览器查看本示例');
     }
 
+    //检查数据点是否在多边形道路区域内
+    function checkPoint(lng,lat){
+        var c1 = false,c2=false;
+        var minDis1 = Number.MAX_VALUE,minDis2 = Number.MAX_VALUE;
+        for (var i = -1, l = path_1.data.length, j = l - 1; ++i < l; j = i){
+             minDis1 = Math.min(minDis1,Math.pow((lng-path_1.data[i][0]),2)+Math.pow((lat-path_1.data[i][1]),2));
+            ((path_1.data[i][1] <= lat && lat < path_1.data[j][1]) || (path_1.data[j][1] <= lat && lat < path_1.data[i][1]))&&
+            (lng < (path_1.data[j][0] - path_1.data[i][0]) * (lat - path_1.data[i][1]) / (path_1.data[j][1] - path_1.data[i][1]) + path_1.data[i][0])&&
+            (c1 =!c1);
 
-   /* var status = 2,startPoint,endPoint;
+        }
+        if(c1==true){
+            return 1;
+        }
+        for (var i = -1, l = path_2.data.length, j = l - 1; ++i < l; j = i){
+            minDis2 = Math.min(minDis2,Math.pow((lng-path_2.data[i][0]),2)+Math.pow((lat-path_2.data[i][1]),2));
+            ((path_2.data[i][1] <= lat && lat < path_2.data[j][1]) || (path_2.data[j][1] <= lat && lat < path_2.data[i][1]))&&
+            (lng < (path_2.data[j][0] - path_2.data[i][0]) * (lat - path_2.data[i][1]) / (path_2.data[j][1] - path_2.data[i][1]) + path_2.data[i][0])&&
+            (c2 =!c2);
+        }
+        if(c2==true){
+            return -1;
+        }
+        if(minDis1<0.0000001&&minDis2<0.0000001)
+            return (minDis1<minDis2)?1:-1;
+        return 0;
+    }
+
+
+    var status = 2,startPoint,endPoint;
 
     map.addEventListener("click",function(e){
-        status ++;
+       console.log(e.point.lng+ "," + e.point.lat);
+        /*status ++;
         status = 1+ (status-1)%2;
         if (status ==1){
             startPoint = new Point(e.point.lng,e.point.lat);
         }else{
             endPoint = new Point(e.point.lng,e.point.lat);
-        }
-    });*/
+        }*/
+    });
 
     var lushu;
     // 实例化一个驾车导航用来生成路线
@@ -115,27 +155,20 @@
                 }
                 pathstr = pathstr + "],\"total\":" + arrPois.length + ",\"rt_loc_cnt\":" + arrPois.length + ",\"errorno\": 0,\"NearestTime\": " +
                         "\"2014-08-29 15:20:00\",\"userTime\": \"2014-08-29 15:32:11\"}"
-                console.log(pathstr);
-                map.addOverlay(new BMap.Polyline(arrPois, {strokeColor: '#111'}));
+                //console.log(pathstr);
+                map.addOverlay(new BMap.Polyline(arrPois, {strokeColor: '#111',strokeWeight:1}));
                 map.setViewport(arrPois);
-                lushu = new BMapLib.LuShu(map,arrPois,{
-                    defaultContent:"",//"从天安门到百度大厦"
-                    autoView:true,//是否开启自动视野调整，如果开启那么路书在运动过程中会根据视野自动调整
-                    icon  : new BMap.Icon('car.png', new BMap.Size(52,26),{anchor : new BMap.Size(27, 13)}),
-                    speed: 4500,
-                    enableRotation:true,//是否设置marker随着道路的走向进行旋转
-                    landmarkPois: [
-                        {lng:116.314782,lat:39.913508,html:'加油站',pauseTime:2},
-                        {lng:116.315391,lat:39.964429,html:'高速公路收费<div><img src="http://map.baidu.com/img/logo-map.gif"/></div>',pauseTime:3},
-                        {lng:116.381476,lat:39.974073,html:'肯德基早餐<div><img src="http://ishouji.baidu.com/resource/images/map/show_pic04.gif"/></div>',pauseTime:2}
-                    ]});
             }
         }
     });
     //drv.search('万寿路口东', '西单路口东');
-    //path1
-    var startPoint = new BMap.Point(116.527417,39.98056);
-    var endPoint = new BMap.Point(116.538403,39.959354);
+    //path1left
+    //var startPoint = new BMap.Point(116.527417,39.98056);
+    //var endPoint = new BMap.Point(116.538333,39.959325);
+
+    //path1right
+    var startPoint = new BMap.Point(116.527574,39.980455);
+    var endPoint = new BMap.Point(116.538686,39.959216);
 
     //path2
     //var startPoint = new BMap.Point(116.538535,39.959418);
