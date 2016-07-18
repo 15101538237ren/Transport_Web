@@ -75,17 +75,9 @@
     if (document.createElement('canvas').getContext) {  // 判断当前浏览器是否支持绘制海量点
         var points = [];  // 添加海量点数据
         console.log("var pathpoints = { \"data\":[");
-        var pointsNum = 0;
         for (var i = 0; i < data.data.length; i++) {
             points.push(new BMap.Point(data.data[i][0], data.data[i][1]));
-            direction = checkPoint(data.data[i][0],data.data[i][1]);
-            if(direction != 0) {
-                console.log("[" + data.data[i][0] + "," + data.data[i][1] + "," + direction + "],");
-                pointsNum ++ ;
-            }
         }
-        console.log("],\"total\":"+pointsNum + ",\"rt_loc_cnt\":"+pointsNum+",\"errorno\": 0,\"NearestTime\": \"2014-08-29 15:20:00\"," +
-                "\"userTime\": \"2014-08-29 15:32:11\"}");
         var options = {
             size: BMAP_POINT_SIZE_TINY,
             //shape: BMAP_POINT_SHAPE_STAR,
@@ -100,35 +92,6 @@
     } else {
         alert('请在chrome、safari、IE8+以上浏览器查看本示例');
     }
-
-    //检查数据点是否在多边形道路区域内
-    function checkPoint(lng,lat){
-        var c1 = false,c2=false;
-        var minDis1 = Number.MAX_VALUE,minDis2 = Number.MAX_VALUE;
-        for (var i = -1, l = path_1.data.length, j = l - 1; ++i < l; j = i){
-             minDis1 = Math.min(minDis1,Math.pow((lng-path_1.data[i][0]),2)+Math.pow((lat-path_1.data[i][1]),2));
-            ((path_1.data[i][1] <= lat && lat < path_1.data[j][1]) || (path_1.data[j][1] <= lat && lat < path_1.data[i][1]))&&
-            (lng < (path_1.data[j][0] - path_1.data[i][0]) * (lat - path_1.data[i][1]) / (path_1.data[j][1] - path_1.data[i][1]) + path_1.data[i][0])&&
-            (c1 =!c1);
-
-        }
-        if(c1==true){
-            return 1;
-        }
-        for (var i = -1, l = path_2.data.length, j = l - 1; ++i < l; j = i){
-            minDis2 = Math.min(minDis2,Math.pow((lng-path_2.data[i][0]),2)+Math.pow((lat-path_2.data[i][1]),2));
-            ((path_2.data[i][1] <= lat && lat < path_2.data[j][1]) || (path_2.data[j][1] <= lat && lat < path_2.data[i][1]))&&
-            (lng < (path_2.data[j][0] - path_2.data[i][0]) * (lat - path_2.data[i][1]) / (path_2.data[j][1] - path_2.data[i][1]) + path_2.data[i][0])&&
-            (c2 =!c2);
-        }
-        if(c2==true){
-            return -1;
-        }
-        if(minDis1<0.0000001&&minDis2<0.0000001)
-            return (minDis1<minDis2)?1:-1;
-        return 0;
-    }
-
 
     var status = 2,startPoint,endPoint;
 
