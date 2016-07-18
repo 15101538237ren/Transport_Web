@@ -164,7 +164,7 @@ def label_points(data_path,road_path,out_data_path,out_newjsdata_path = STATIC_R
     except Exception as e:
         print(e)
     jsdata = 'var pathpoints={\"data\":'+ pathpoints_str + ',\"total\":' + str(len(pathpoints)) + ',\"rt_loc_cnt\":'+ str(len(pathpoints)) +\
-     ',\"errorno\": 0,\"NearestTime\": \"2014-08-29 15:20:00\",\"userTime\": \"2014-08-29 15:32:11\"'
+     ',\"errorno\": 0,\"NearestTime\": \"2014-08-29 15:20:00\",\"userTime\": \"2014-08-29 15:32:11\"}'
     jsdatafile.write(jsdata)
     datafile.close()
     roadfile.close()
