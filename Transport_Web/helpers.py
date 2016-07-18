@@ -1,8 +1,7 @@
 # coding: utf-8
-import os,xlrd,json,pickle,math,sys
+import os,xlrd,json,pickle,math,sys,datetime
 from django.http import HttpResponse, JsonResponse
 from Transport_Web.settings import BASE_DIR,STATIC_ROOT
-
 MAXINT = 999999999
 
 def success_response(response=None):
@@ -44,17 +43,17 @@ def road_read_and_store(road_dir,pickle_path):
             except ValueError as e:
                 print(e)
             roadset.append(roaddata)
-    pickle.dump(roadset, out_pickle, -1)
+    pickle.dump(roadset, out_pickle, 3)
     out_pickle.close()
 
 
 def load_pickle_from(pickle_path=STATIC_ROOT+os.sep+'WFJBXX_ORG.pkl'):
-	f = open(pickle_path, 'rb')
-	#print "now loading data.pkl"
-	#print("now loading data.pkl")
-	table_arr=pickle.load(f)
-	f.close()
-	return table_arr
+    f = open(pickle_path, 'rb')
+    #print "now loading data.pkl"
+    # #print("now loading data.pkl")
+    table_arr=pickle.load(f)
+    f.close()
+    return table_arr
 
 
 def get_point_in_region(data_list,slat,slng,elat,elng):
@@ -171,6 +170,18 @@ def label_points(data_path,road_path,out_data_path,out_newjsdata_path = STATIC_R
     labeldatafile.close()
     jsdatafile.close()
 
+def convert_point_list_to_path_file(point_lists,direction):
+    split='\n\t'
+    now_str=datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    json_str='{'+split+'"data": ['+split
+
+    points_str_list=[]
+    for point in point_lists:
+        points_str='['+str(point["lng"])+', '+str(point["lat"])+']'
+        points_str_list.append(points_str)
+    json_str=json_str+(","+split).join(points_str_list)+split
+    json_str=json_str+'],'+split+'"total": '+str(len(point_lists))+','+split+'"rt_loc_cnt": '+str(len(point_lists))+','+split+'"errorno": 0,'+split+'"direction":'+str(direction)+','+split+'"NearestTime": "'+now_str+'",'+split+'"userTime": "'+now_str+'"'+'\n}'
+    return json_str
 
 if __name__ == '__main__':
     excel_path=STATIC_ROOT+os.sep+"WFJBXX_ORG.xls"
