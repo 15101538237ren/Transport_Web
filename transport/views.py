@@ -13,8 +13,8 @@ def region(request):
     slng=float(request.GET.get("slng"))
     elat=float(request.GET.get("elat"))
     elng=float(request.GET.get("elng"))
-    #print "左下经纬度："+ unicode(slat)+u"," + unicode(slng) + u", 右上经纬度:"+unicode(elat)+u","+unicode(elng)
-    print("左下经纬度：" + str(slat) + u"," + str(slng) + u", 右上经纬度:" + str(elat) + u"," + str(elng))
+    #print u"左下经纬度："+ unicode(slat)+u"," + unicode(slng) + u", 右上经纬度:"+unicode(elat)+u","+unicode(elng)
+    print(u"左下经纬度：" + str(slat) + u"," + str(slng) + u", 右上经纬度:" + str(elat) + u"," + str(elng))
 
     table_arr=load_pickle_from(STATIC_ROOT+os.sep+"WFJBXX_ORG.pkl")
     table_1=table_arr[0]
