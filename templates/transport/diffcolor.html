@@ -1,0 +1,197 @@
+{% load static from staticfiles %}
+<!DOCTYPE HTML>
+<html>
+<head>
+    <title>Baidu Map Visualization</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">
+    <style type="text/css">
+        html,body{
+            margin:0;
+            width:100%;
+            height:100%;
+            background:#ffffff;
+        }
+        #map{
+            width:100%;
+            height:100%;
+        }
+        #panel {
+            position: absolute;
+            top:30px;
+            left:10px;
+            z-index: 999;
+            color: #fff;
+        }
+        #login{
+            position:absolute;
+            width:300px;
+            height:40px;
+            left:50%;
+            top:50%;
+            margin:-40px 0 0 -150px;
+        }
+        #login input[type=password]{
+            width:200px;
+            height:30px;
+            padding:3px;
+            line-height:30px;
+            border:1px solid #000;
+        }
+        #login input[type=submit]{
+            width:80px;
+            height:38px;
+            display:inline-block;
+            line-height:38px;
+        }
+    </style>
+    <script type="text/javascript" src="http://api.map.baidu.com/api?v=2.0&ak=eM0GfCwd27kZRyM49ZOkvkOaidDXz6Wf"></script>
+    <script type="text/javascript" src="http://api.map.baidu.com/library/DrawingManager/1.4/src/DrawingManager_min.js"></script>
+    <link rel="stylesheet" href="http://api.map.baidu.com/library/DrawingManager/1.4/src/DrawingManager_min.css" />
+    <script type="text/javascript" src="{% static "assets/pathpoints.js" %}"></script>
+    <script type="text/javascript" src="{% static "js/jquery-1.11.3.min.js" %}"></script>
+
+    <link rel="stylesheet" type="text/css" media="screen" href="{% static "css/jquery-confirm.min.css" %}" />
+    <script type="text/javascript" src="{% static "js/jquery-confirm.min.js" %}" charset="UTF-8"></script>
+
+
+    <link rel="stylesheet" type="text/css" media="screen" href="{% static "css/bootstrap.min.css" %}" />
+    <script type="text/javascript" src="{% static "js/bootstrap.min.js" %}" charset="UTF-8"></script>
+</head>
+<body>
+<div id="map"></div>
+<script type="text/javascript">
+    var map = new BMap.Map("map", {});                        // 创建Map实例
+    map.setMapStyle({style:'googlelite'});
+    map.centerAndZoom(new BMap.Point(116.404, 39.915), 12);     // 初始化地图,设置中心点坐标和地图级别
+    map.enableScrollWheelZoom();                        //启用滚轮放大缩小
+    var top_left_control = new BMap.ScaleControl({anchor: BMAP_ANCHOR_TOP_LEFT});// 左上角，添加比例尺
+	var top_left_navigation = new BMap.NavigationControl();  //左上角，添加默认缩放平移控件
+    map.addControl(top_left_control);
+    map.addControl(top_left_navigation);
+
+    map.addEventListener("click",function(e){
+       console.log("[" + e.point.lng+ "," + e.point.lat+"],");
+    });
+
+    if (document.createElement('canvas').getContext) {  // 判断当前浏览器是否支持绘制海量点
+        var points1 = [],points2 = [],points3 = [];  // 添加海量点数据
+        for (var i = 0; i < pathpoints.data.length; i++) {
+            if(pathpoints.data[i][2]==1){
+                points1.push(new BMap.Point(pathpoints.data[i][0], pathpoints.data[i][1]));
+            }else if(pathpoints.data[i][2]==-1) {
+                points2.push(new BMap.Point(pathpoints.data[i][0], pathpoints.data[i][1]));
+            }else {
+                points3.push(new BMap.Point(pathpoints.data[i][0], pathpoints.data[i][1]));
+            }
+        }
+        var options1 = {
+            size: BMAP_POINT_SIZE_TINY,
+            //shape: BMAP_POINT_SHAPE_STAR,
+            color: '#ff0000'
+        };
+        var options2 = {
+            size: BMAP_POINT_SIZE_TINY,
+            //shape: BMAP_POINT_SHAPE_STAR,
+            color: '#0000ff'
+        };
+        var options3 = {
+            size: BMAP_POINT_SIZE_TINY,
+            //shape: BMAP_POINT_SHAPE_STAR,
+            color: '#000000'
+        };
+        var pointCollection1 = new BMap.PointCollection(points1, options1);  // 初始化PointCollection
+        var pointCollection2 = new BMap.PointCollection(points2, options2);  // 初始化PointCollection
+        var pointCollection3 = new BMap.PointCollection(points3, options3);  // 初始化PointCollection
+        pointCollection1.addEventListener('click', function (e) {
+            alert('单击点的坐标为：' + e.point.lng + ',' + e.point.lat);  // 监听点击事件
+        });
+        pointCollection2.addEventListener('click', function (e) {
+            alert('单击点的坐标为：' + e.point.lng + ',' + e.point.lat);  // 监听点击事件
+        });
+
+        map.addOverlay(pointCollection1);  // 添加Overlay
+        map.addOverlay(pointCollection2);  // 添加Overlay
+        map.addOverlay(pointCollection3);  // 添加Overlay
+    } else {
+        alert('请在chrome、safari、IE8+以上浏览器查看本示例');
+    }
+
+    var overlays = [];
+	var overlaycomplete = function(e){
+        overlays.push(e.overlay);
+        var olRectPoint = e.overlay.ro;
+        /* *.Nk是从 e 的dom节点中寻找到的，百度本身没有提供此方法的介绍。
+         * olRectPoint坐标排序方式
+         *	┌─────────────────────┐
+         *	│0					1 │
+         *	│					  │
+         *	│3					2 │
+         *	└─────────────────────┘
+         * */
+        var sw = olRectPoint[0];		//左上
+        var ne = olRectPoint[2];		//右下
+        //alert('左上：'+ sw.lng+',' + sw.lat + '    右下：'+ne.lng+','+ne.lat);
+
+        $.confirm({
+                confirmButtonClass: 'btn-info',
+                cancelButtonClass: 'btn-danger',
+
+                keyboardEnabled: true,
+                title: '信息',
+                content: '是否选择当前区域中的数据点?',
+                confirmButton:'是',
+                cancelButton:'否',
+                closeIcon:true,
+                confirm: function(){
+                    var addr="/transport/region?"+"slat="+sw.lng+"&slng="+sw.lat+"&elat="+ne.lng+"&elng="+ne.lat;
+                    $.get(addr,function(result){
+                      if(result.code == 0){
+                          alert("区域内有"+result.message+"个点!");
+                      }
+                      else
+                      {
+                          alert(result.message);
+                      }
+                    });
+                },
+                cancel:function(){
+                    clearAll();
+                }
+            });
+
+    };
+    var styleOptions = {
+        strokeColor:"blue",    //边线颜色。
+        fillColor:"blue",      //填充颜色。当参数为空时，圆形将没有填充效果。
+        strokeWeight: 3,       //边线的宽度，以像素为单位。
+        strokeOpacity: 0.5,	   //边线透明度，取值范围0 - 1。
+        fillOpacity: 0.2,      //填充的透明度，取值范围0 - 1。
+        strokeStyle: 'solid' //边线的样式，solid或dashed。
+    };
+    //实例化鼠标绘制工具
+    var drawingManager = new BMapLib.DrawingManager(map, {
+        isOpen: false, //是否开启绘制模式
+        enableDrawingTool: true, //是否显示工具栏
+        drawingToolOptions: {
+            anchor: BMAP_ANCHOR_TOP_RIGHT, //位置
+            offset: new BMap.Size(5, 5), //偏离值
+        },
+        circleOptions: styleOptions, //圆的样式
+        polylineOptions: styleOptions, //线的样式
+        polygonOptions: styleOptions, //多边形的样式
+        rectangleOptions: styleOptions //矩形的样式
+    });
+	 //添加鼠标绘制工具监听事件，用于获取绘制结果
+    drawingManager.addEventListener('overlaycomplete', overlaycomplete);
+    function clearAll() {
+		for(var i = 0; i < overlays.length; i++){
+            map.removeOverlay(overlays[i]);
+        }
+        overlays.length = 0
+    }
+</script>
+</body>
+</html>
+
+

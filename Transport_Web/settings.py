@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/1.8/ref/settings/
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 import os
+from os.path import normpath,join
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -66,10 +67,17 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'django.core.context_processors.static',
             ],
         },
     },
 ]
+
+STATIC_ROOT = normpath(join(BASE_DIR,  'static','assets'))
+STATICFILES_DIRS = ( normpath(join(BASE_DIR,  'static')),)
+
+STATIC_URL = '/static/'
+
 
 WSGI_APPLICATION = 'Transport_Web.wsgi.application'
 

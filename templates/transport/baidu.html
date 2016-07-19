@@ -1,0 +1,258 @@
+{% load static from staticfiles %}
+<!DOCTYPE HTML>
+<html>
+<head>
+    <title>Baidu Map Visualization</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">
+    <style type="text/css">
+        html,body{
+            margin:0;
+            width:100%;
+            height:100%;
+            background:#ffffff;
+        }
+        #map{
+            width:100%;
+            height:100%;
+        }
+        #panel {
+            position: absolute;
+            top:30px;
+            left:10px;
+            z-index: 999;
+            color: #fff;
+        }
+        #login{
+            position:absolute;
+            width:300px;
+            height:40px;
+            left:50%;
+            top:50%;
+            margin:-40px 0 0 -150px;
+        }
+        #login input[type=password]{
+            width:200px;
+            height:30px;
+            padding:3px;
+            line-height:30px;
+            border:1px solid #000;
+        }
+        #login input[type=submit]{
+            width:80px;
+            height:38px;
+            display:inline-block;
+            line-height:38px;
+        }
+    </style>
+    <script type="text/javascript" src="http://api.map.baidu.com/api?v=2.0&ak=eM0GfCwd27kZRyM49ZOkvkOaidDXz6Wf"></script>
+    <script type="text/javascript" src="http://api.map.baidu.com/library/DrawingManager/1.4/src/DrawingManager_min.js"></script>
+    <link rel="stylesheet" href="http://api.map.baidu.com/library/DrawingManager/1.4/src/DrawingManager_min.css" />
+    <script type="text/javascript" src="{% static "js/data.js" %}"></script>
+    <script type="text/javascript" src="{% static "js/jquery-1.11.3.min.js" %}"></script>
+
+    <link rel="stylesheet" type="text/css" media="screen" href="{% static "css/jquery-confirm.min.css" %}" />
+    <script type="text/javascript" src="{% static "js/jquery-confirm.min.js" %}" charset="UTF-8"></script>
+
+
+    <link rel="stylesheet" type="text/css" media="screen" href="{% static "css/bootstrap.min.css" %}" />
+    <script type="text/javascript" src="{% static "js/bootstrap.min.js" %}" charset="UTF-8"></script>
+</head>
+<body>
+<div id="map"></div>
+<!-- Modal -->
+<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title" id="myModalLabel">区域选择成功!请您标注道路方向</h4>
+      </div>
+      <div class="modal-body">
+        <form action="{% url 'transport:label_the_road' %}"
+            method="post"
+            role="form"
+            class="form-horizontal" id="road_label_form">
+            {% csrf_token %}
+            <div class="form-group">
+                    <label for="direction" class="control-label">道路方向:</label>
+                    <select id="direction" class="form-control" name="direction">
+                        {% for direction in directions %}
+                            {% ifequal forloop.counter 1 %}
+                                <option value="{{ direction.value }}" selected="selected">{{ direction.name }}</option>
+                            {% else %}
+                                <option value="{{ direction.value }}">{{ direction.name }}</option>
+                            {% endifequal %}
+
+                        {% endfor %}
+                    </select>
+               </div>
+            <input type="hidden" id="point_list" name="point_list" value="">
+            </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default   col-md-offset-5" onclick="closemodal()" >取消</button>
+        <input type="submit" class="btn btn-primary" value="标注">
+          </form>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- EndModal -->
+<script type="text/javascript">
+
+    var map = new BMap.Map("map", {});                        // 创建Map实例
+    //map.setMapStyle({style:'googlelite'});
+    map.centerAndZoom(new BMap.Point(116.404, 39.915), 12);     // 初始化地图,设置中心点坐标和地图级别
+    map.enableScrollWheelZoom();                        //启用滚轮放大缩小
+    var top_left_control = new BMap.ScaleControl({anchor: BMAP_ANCHOR_TOP_LEFT});// 左上角，添加比例尺
+	var top_left_navigation = new BMap.NavigationControl();  //左上角，添加默认缩放平移控件
+    map.addControl(top_left_control);
+    map.addControl(top_left_navigation);
+
+    if (document.createElement('canvas').getContext) {  // 判断当前浏览器是否支持绘制海量点
+        var points = [];  // 添加海量点数据
+        console.log("var pathpoints = { \"data\":[");
+        for (var i = 0; i < data.data.length; i++) {
+            points.push(new BMap.Point(data.data[i][0], data.data[i][1]));
+        }
+        var options = {
+            size: BMAP_POINT_SIZE_TINY,
+            //shape: BMAP_POINT_SHAPE_STAR,
+            color: '#000000'
+        };
+        var pointCollection = new BMap.PointCollection(points, options);  // 初始化PointCollection
+        map.addOverlay(pointCollection);  // 添加Overlay
+        //单击获取点击的经纬度
+    } else {
+        alert('请在chrome、safari、IE8+以上浏览器查看本示例');
+    }
+
+    map.addEventListener("click",function(e){
+       console.log(e.point.lng+ "," + e.point.lat);
+    });
+
+    var now_overlay=null;
+    var overlays = [];
+	var overlaycomplete = function(e){
+        if (e.drawingMode=="polyline")//如果是画多边形结束后
+        {
+            var line_points = e.overlay.ia;
+            poly_start_point=line_points[0];
+            poly_end_point=line_points[line_points.length-1];
+            distance_of_st=distance(poly_start_point,poly_end_point);
+            threshold=0.00022;
+            if (distance_of_st <= threshold)
+            {
+                $("#point_list").val(JSON.stringify(line_points));
+                $('#myModal').modal('show');
+                now_overlay= e.overlay;
+            }
+            else {
+                $.confirm({
+                confirmButtonClass: 'btn-info',
+                cancelButtonClass: 'btn-default',
+
+                keyboardEnabled: true,
+                title: '警告',
+                content: '选择的区域起点和终点应相同,请重新绘制!',
+                confirmButton: '确定',
+                cancelButton: '取消',
+                closeIcon: true,
+                confirm: function () {
+                    map.removeOverlay(e.overlay);
+                },
+                cancel: function () {
+                    map.removeOverlay(e.overlay);
+                }
+            });
+            }
+        }
+
+        if (e.drawingMode=="rectangle") {//画矩形结束
+            var olRectPoint = e.overlay.ro;
+            /* *.Nk是从 e 的dom节点中寻找到的，百度本身没有提供此方法的介绍。
+             * olRectPoint坐标排序方式
+             *	┌─────────────────────┐
+             *	│0					1 │
+             *	│					  │
+             *	│3					2 │
+             *	└─────────────────────┘
+             * */
+            var sw = olRectPoint[0];		//左上
+            var ne = olRectPoint[2];		//右下
+            //alert('左上：'+ sw.lng+',' + sw.lat + '    右下：'+ne.lng+','+ne.lat);
+
+            $.confirm({
+                confirmButtonClass: 'btn-info',
+                cancelButtonClass: 'btn-danger',
+
+                keyboardEnabled: true,
+                title: '信息',
+                content: '是否选择当前区域中的数据点?',
+                confirmButton: '是',
+                cancelButton: '否',
+                closeIcon: true,
+                confirm: function () {
+                    var addr = "/transport/region?" + "slat=" + sw.lng + "&slng=" + sw.lat + "&elat=" + ne.lng + "&elng=" + ne.lat;
+                    $.get(addr, function (result) {
+                        if (result.code == 0) {
+                            alert("区域内有" + result.message + "个点!");
+                            //overlays.push(e.overlay);
+                        }
+                        else {
+                            alert(result.message);
+                        }
+                    });
+                },
+                cancel: function () {
+                    map.removeOverlay(e.overlay);
+                }
+            });
+        }
+    };
+    var styleOptions = {
+        strokeColor:"blue",    //边线颜色。
+        fillColor:"blue",      //填充颜色。当参数为空时，圆形将没有填充效果。
+        strokeWeight: 3,       //边线的宽度，以像素为单位。
+        strokeOpacity: 0.5,	   //边线透明度，取值范围0 - 1。
+        fillOpacity: 0.2,      //填充的透明度，取值范围0 - 1。
+        strokeStyle: 'solid' //边线的样式，solid或dashed。
+    };
+    //实例化鼠标绘制工具
+    var drawingManager = new BMapLib.DrawingManager(map, {
+        isOpen: false, //是否开启绘制模式
+        enableDrawingTool: true, //是否显示工具栏
+        drawingToolOptions: {
+            anchor: BMAP_ANCHOR_TOP_RIGHT, //位置
+            offset: new BMap.Size(5, 5), //偏离值
+        },
+        circleOptions: styleOptions, //圆的样式
+        polylineOptions: styleOptions, //线的样式
+        polygonOptions: styleOptions, //多边形的样式
+        rectangleOptions: styleOptions //矩形的样式
+    });
+	 //添加鼠标绘制工具监听事件，用于获取绘制结果
+    drawingManager.addEventListener('overlaycomplete', overlaycomplete);
+    function clearAll() {
+		for(var i = 0; i < overlays.length; i++){
+            map.removeOverlay(overlays[i]);
+        }
+        overlays.length = 0
+    }
+    {{ polyline_js_code | safe }}
+    function distance(x,y){
+        lat_sqr=Math.pow((x.lat- y.lat),2);
+        lng_sqr=Math.pow((x.lng- y.lng),2);
+        return Math.sqrt(lat_sqr+lng_sqr);
+    }
+    function closemodal()
+    {
+        map.removeOverlay(now_overlay);
+        $('#myModal').modal('show');
+    }
+</script>
+</body>
+</html>
+
+
