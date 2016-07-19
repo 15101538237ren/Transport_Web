@@ -6,6 +6,7 @@ MAXINT = 999999999
 EPS = 0.000001
 ERROR_EPS = 0.00008
 ROAD_DIR=BASE_DIR+ os.sep+'data'+ os.sep + 'input' + os.sep +'road'
+POINT_OUTPUT_DIR = BASE_DIR+ os.sep+'data'+ os.sep + 'output'
 
 def success_response(response=None):
     return JsonResponse({"code": 0, "message": response})
@@ -145,7 +146,7 @@ def check_point(dataset,lng,lat):
 
 
 #标注所有点，将标注了方向的数据点保存在新的文件中
-def label_points(data_path,road_path,out_data_path,out_newjsdata_path = STATIC_ROOT + os.sep + 'pathpoints.js'):
+def label_points(data_path,road_path,out_data_path,out_newjsdata_path = POINT_OUTPUT_DIR + os.sep + 'pathpoints.js'):
     datafile = open(data_path, 'rb')
     roadfile = open(road_path, 'rb')
     labeldatafile = open(out_data_path, 'wb')
