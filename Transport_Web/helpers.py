@@ -157,9 +157,10 @@ def label_points(data_path,road_path,out_data_path,out_newjsdata_path = STATIC_R
         for point in dataset[i]:  # 遍历dataset中的每一个数据点
             flag,minDis,pos = 0,MAXINT,0
             #pos用来记录与这个点离的最近的道路的index
-            if(not (roadset[j]['minX'] <= point[0] and point[0] <= roadset[j]['maxX'] and roadset[j]['minY'] <= point[1] and point[1] <= roadset[j]['maxY'])):
-                continue
             for j in range(len(roadset)):  # 遍历roadset中的每一条道路
+                if (not (roadset[j]['minX'] <= point[0] and point[0] <= roadset[j]['maxX'] and roadset[j]['minY'] <=
+                    point[1] and point[1] <= roadset[j]['maxY'])):
+                    continue
                 [status,dis] = check_point(roadset[j]['data'],point[0],point[1])
                 if(status==1):
                     flag = 1
