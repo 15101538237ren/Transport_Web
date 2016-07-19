@@ -91,7 +91,7 @@
             </div>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-default   col-md-offset-5" data-dismiss="modal">取消</button>
+        <button type="button" class="btn btn-default   col-md-offset-5" onclick="closemodal()" >取消</button>
         <input type="submit" class="btn btn-primary" value="标注">
           </form>
       </div>
@@ -132,6 +132,7 @@
        console.log(e.point.lng+ "," + e.point.lat);
     });
 
+    var now_overlay=null;
     var overlays = [];
 	var overlaycomplete = function(e){
         if (e.drawingMode=="polyline")//如果是画多边形结束后
@@ -145,6 +146,7 @@
             {
                 $("#point_list").val(JSON.stringify(line_points));
                 $('#myModal').modal('show');
+                now_overlay= e.overlay;
             }
             else {
                 $.confirm({
@@ -243,6 +245,11 @@
         lat_sqr=Math.pow((x.lat- y.lat),2);
         lng_sqr=Math.pow((x.lng- y.lng),2);
         return Math.sqrt(lat_sqr+lng_sqr);
+    }
+    function closemodal()
+    {
+        map.removeOverlay(now_overlay);
+        $('#myModal').modal('show');
     }
 </script>
 </body>

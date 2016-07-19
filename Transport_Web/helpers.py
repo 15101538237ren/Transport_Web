@@ -1,5 +1,5 @@
 # coding: utf-8
-import os,xlrd,json,pickle,math,sys,datetime
+import os,xlrd,json,pickle,math,sys,datetime,pytz
 from django.http import HttpResponse, JsonResponse
 from Transport_Web.settings import BASE_DIR,STATIC_ROOT
 MAXINT = 999999999
@@ -181,7 +181,8 @@ def label_points(data_path,road_path,out_data_path,out_newjsdata_path = STATIC_R
 
 def convert_point_list_to_path_file(point_lists,direction):
     split='\n\t'
-    now_str=datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    tz=pytz.timezone(pytz.country_timezones('cn')[0])
+    now_str=datetime.datetime.now(tz).strftime('%Y-%m-%d %H:%M:%S')
     json_str='{'+split+'"data": ['+split
 
     points_str_list=[]

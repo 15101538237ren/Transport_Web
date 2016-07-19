@@ -7,6 +7,7 @@ from Transport_Web.helpers import *
 from Transport_Web.settings import STATIC_ROOT
 from django.views.decorators.http import require_GET, require_POST
 from transport.direction import *
+import pytz
 # Create your views here.
 
 def index(request):
@@ -34,8 +35,10 @@ def label_the_road(request):
     print point_list_str+"\t"+direction
     point_list=json.loads(point_list_str)
     road_json=convert_point_list_to_path_file(point_list,direction)
-    now_str=datetime.datetime.now().strftime('%Y_%m_%d_%H:%M:%S')+".json"
-    print road_json
+    tz=pytz.timezone(pytz.country_timezones('cn')[0])
+    now_str=datetime.datetime.now(tz).strftime('%Y_%m_%d_%H:%M:%S')+".json"
+    road_file=open(ROAD_DIR+os.sep+now_str,"w")
+    road_file.write(road_json)
     return HttpResponseRedirect(reverse('transport:index'))
 def showpath(request):
     return render(request, 'transport/diffcolor.html',locals())
