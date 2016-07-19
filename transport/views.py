@@ -41,4 +41,5 @@ def label_the_road(request):
     road_file.write(road_json)
     return HttpResponseRedirect(reverse('transport:index'))
 def showpath(request):
+    noise_invisible=int(request.GET.get("noise_invisible",0))
     return render(request, 'transport/diffcolor.html',locals())

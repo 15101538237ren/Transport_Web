@@ -73,7 +73,7 @@
     map.addEventListener("click",function(e){
        console.log("[" + e.point.lng+ "," + e.point.lat+"],");
     });
-
+    var noise_invisible={{ noise_invisible }};
     if (document.createElement('canvas').getContext) {  // 判断当前浏览器是否支持绘制海量点
         var points1 = [],points2 = [],points3 = [];  // 添加海量点数据
         for (var i = 0; i < pathpoints.data.length; i++) {
@@ -86,17 +86,17 @@
             }
         }
         var options1 = {
-            size: BMAP_POINT_SIZE_TINY,
+            size: BMAP_POINT_SIZE_SMALLER,
             //shape: BMAP_POINT_SHAPE_STAR,
             color: '#ff0000'
         };
         var options2 = {
-            size: BMAP_POINT_SIZE_TINY,
+            size: BMAP_POINT_SIZE_SMALLER,
             //shape: BMAP_POINT_SHAPE_STAR,
             color: '#0000ff'
         };
         var options3 = {
-            size: BMAP_POINT_SIZE_TINY,
+            size: BMAP_POINT_SIZE_SMALLER,
             //shape: BMAP_POINT_SHAPE_STAR,
             color: '#000000'
         };
@@ -112,7 +112,9 @@
 
         map.addOverlay(pointCollection1);  // 添加Overlay
         map.addOverlay(pointCollection2);  // 添加Overlay
-        map.addOverlay(pointCollection3);  // 添加Overlay
+        if (noise_invisible==0) {
+            map.addOverlay(pointCollection3);  // 添加Overlay
+        }
     } else {
         alert('请在chrome、safari、IE8+以上浏览器查看本示例');
     }
