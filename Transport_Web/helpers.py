@@ -231,23 +231,23 @@ def poly_line_js(roads_set,roads_directions):
                     '}'
     return js_code
 if __name__ == '__main__':
-    # excel_path=STATIC_ROOT+os.sep+"WFJBXX_ORG.xls"
-    # out_pickle_path=STATIC_ROOT+os.sep+"WFJBXX_ORG.pkl"
-    # data_read_and_store(excel_path,out_pickle_path)
-    #
-    # excel_exception_path = STATIC_ROOT+os.sep+"exception.xlsx"
-    # out_exception_pickle_path = STATIC_ROOT + os.sep + "Exception.pkl"
-    # #data_read_and_store(excel_exception_path, out_exception_pickle_path)
-    #
-    # #将road_path整个目录下的path都存储成pkl格式
-    # out_road_path=STATIC_ROOT+os.sep+'path.pkl'
-    # road_read_and_store(ROAD_DIR,out_road_path)
-    # out_newdata_path = STATIC_ROOT + os.sep + 'newdata.pkl'
-    # label_points(out_pickle_path, out_road_path, out_newdata_path)
-    #
-    #
-    # out_exception_data_path = STATIC_ROOT + os.sep + 'exceptiondata.pkl'
-    # out_exception_js_path = STATIC_ROOT + os.sep + 'exceptionpoints.js'
-    # #label_points(out_exception_pickle_path, out_road_path, out_exception_data_path,out_exception_js_path)
+    excel_path=STATIC_ROOT+os.sep+"WFJBXX_ORG.xls"
+    out_pickle_path=STATIC_ROOT+os.sep+"WFJBXX_ORG.pkl"
+    data_read_and_store(excel_path,out_pickle_path)
+
+    excel_exception_path = STATIC_ROOT+os.sep+"exception.xlsx"
+    out_exception_pickle_path = STATIC_ROOT + os.sep + "Exception.pkl"
+    #data_read_and_store(excel_exception_path, out_exception_pickle_path)
+
+    #将road_path整个目录下的path都存储成pkl格式
+    out_road_path=STATIC_ROOT+os.sep+'path.pkl'
+    road_read_and_store(ROAD_DIR,out_road_path)
+    out_newdata_path = STATIC_ROOT + os.sep + 'newdata.pkl'
+    label_points(out_pickle_path, out_road_path, out_newdata_path)
+
+
+    out_exception_data_path = STATIC_ROOT + os.sep + 'exceptiondata.pkl'
+    out_exception_js_path = STATIC_ROOT + os.sep + 'exceptionpoints.js'
+    #label_points(out_exception_pickle_path, out_road_path, out_exception_data_path,out_exception_js_path)
     roads_set,roads_directions=get_all_paths()
     poly_line_js(roads_set,roads_directions)
