@@ -48,10 +48,7 @@
     <script type="text/javascript" src="http://api.map.baidu.com/api?v=2.0&ak=eM0GfCwd27kZRyM49ZOkvkOaidDXz6Wf"></script>
     <script type="text/javascript" src="http://api.map.baidu.com/library/DrawingManager/1.4/src/DrawingManager_min.js"></script>
     <link rel="stylesheet" href="http://api.map.baidu.com/library/DrawingManager/1.4/src/DrawingManager_min.css" />
-    <!--<script type="text/javascript" src="{# {% static "assets/path1.js" %} #}"></script>
-    <script type="text/javascript" src="{# {% static "assets/path2.js" %} #}"></script>-->
-    <script type="text/javascript" src="{% static "assets/pathpoints1.js" %}"></script>
-    <script type="text/javascript" src="{% static "assets/pathpoints2.js" %}"></script>
+    <script type="text/javascript" src="{% static "assets/pathpoints.js" %}"></script>
     <script type="text/javascript" src="{% static "js/jquery-1.11.3.min.js" %}"></script>
 
     <link rel="stylesheet" type="text/css" media="screen" href="{% static "css/jquery-confirm.min.css" %}" />
@@ -73,37 +70,49 @@
     map.addControl(top_left_control);
     map.addControl(top_left_navigation);
 
+    map.addEventListener("click",function(e){
+       console.log("[" + e.point.lng+ "," + e.point.lat+"],");
+    });
+
     if (document.createElement('canvas').getContext) {  // 判断当前浏览器是否支持绘制海量点
-        var points = [];  // 添加海量点数据
-        for (var i = 0; i < pathpoints1.data.length; i++) {
-            points.push(new BMap.Point(pathpoints1.data[i][0], pathpoints1.data[i][1]));
+        var points1 = [],points2 = [],points3 = [];  // 添加海量点数据
+        for (var i = 0; i < pathpoints.data.length; i++) {
+            if(pathpoints.data[i][2]==1){
+                points1.push(new BMap.Point(pathpoints.data[i][0], pathpoints.data[i][1]));
+            }else if(pathpoints.data[i][2]==-1) {
+                points2.push(new BMap.Point(pathpoints.data[i][0], pathpoints.data[i][1]));
+            }else {
+                points3.push(new BMap.Point(pathpoints.data[i][0], pathpoints.data[i][1]));
+            }
         }
-        var options = {
+        var options1 = {
             size: BMAP_POINT_SIZE_SMALLER,
             //shape: BMAP_POINT_SHAPE_STAR,
             color: '#ff0000'
         };
-        var pointCollection = new BMap.PointCollection(points, options);  // 初始化PointCollection
-        pointCollection.addEventListener('click', function (e) {
-            alert('单击点的坐标为：' + e.point.lng + ',' + e.point.lat);  // 监听点击事件
-        });
-        map.addOverlay(pointCollection);  // 添加Overlay
-        //单击获取点击的经纬度
-
-        var points2 = [];  // 添加海量点数据
-        for (var i = 0; i < pathpoints2.data.length; i++) {
-            points2.push(new BMap.Point(pathpoints2.data[i][0], pathpoints2.data[i][1]));
-        }
         var options2 = {
             size: BMAP_POINT_SIZE_SMALLER,
             //shape: BMAP_POINT_SHAPE_STAR,
             color: '#0000ff'
         };
+        var options3 = {
+            size: BMAP_POINT_SIZE_SMALLER,
+            //shape: BMAP_POINT_SHAPE_STAR,
+            color: '#000000'
+        };
+        var pointCollection1 = new BMap.PointCollection(points1, options1);  // 初始化PointCollection
         var pointCollection2 = new BMap.PointCollection(points2, options2);  // 初始化PointCollection
+        var pointCollection3 = new BMap.PointCollection(points3, options3);  // 初始化PointCollection
+        pointCollection1.addEventListener('click', function (e) {
+            alert('单击点的坐标为：' + e.point.lng + ',' + e.point.lat);  // 监听点击事件
+        });
         pointCollection2.addEventListener('click', function (e) {
             alert('单击点的坐标为：' + e.point.lng + ',' + e.point.lat);  // 监听点击事件
         });
+
+        map.addOverlay(pointCollection1);  // 添加Overlay
         map.addOverlay(pointCollection2);  // 添加Overlay
+        map.addOverlay(pointCollection3);  // 添加Overlay
     } else {
         alert('请在chrome、safari、IE8+以上浏览器查看本示例');
     }
