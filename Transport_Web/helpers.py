@@ -46,6 +46,7 @@ def road_read_and_store(road_dir,pickle_path):
             text = roadfile.read()
             try:
                 roaddata = json.loads(text)  #获取到道路的数据集
+                
             except ValueError as e:
                 print(e)
             roadset.append(roaddata)
