@@ -238,7 +238,7 @@
         }
         overlays.length = 0
     }
-
+    {{ polyline_js_code | safe }}
     function distance(x,y){
         lat_sqr=Math.pow((x.lat- y.lat),2);
         lng_sqr=Math.pow((x.lng- y.lng),2);

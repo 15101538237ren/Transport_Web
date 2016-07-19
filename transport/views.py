@@ -10,7 +10,8 @@ from transport.direction import *
 # Create your views here.
 
 def index(request):
-
+    roads_set,roads_directions=get_all_paths()
+    polyline_js_code=poly_line_js(roads_set,roads_directions)
     clockwise=direction(1,u"顺时针")
     anti_clockwise=direction(-1,u"逆时针")
     directions=[clockwise,anti_clockwise]

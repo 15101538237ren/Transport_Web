@@ -5,6 +5,7 @@ from Transport_Web.settings import BASE_DIR,STATIC_ROOT
 MAXINT = 999999999
 EPS = 0.000001
 ERROR_EPS = 0.00008
+ROAD_DIR=BASE_DIR+ os.sep+'data'+ os.sep + 'input' + os.sep +'road'
 
 def success_response(response=None):
     return JsonResponse({"code": 0, "message": response})
@@ -190,24 +191,58 @@ def convert_point_list_to_path_file(point_lists,direction):
     json_str=json_str+(","+split).join(points_str_list)+split
     json_str=json_str+'],'+split+'"total": '+str(len(point_lists))+','+split+'"rt_loc_cnt": '+str(len(point_lists))+','+split+'"errorno": 0,'+split+'"direction":'+str(direction)+','+split+'"NearestTime": "'+now_str+'",'+split+'"userTime": "'+now_str+'"'+'\n}'
     return json_str
-
+def get_all_paths(from_dir_path=ROAD_DIR):
+    roads_set = []
+    roads_directions=[]
+    for root,dirnames,filenames in os.walk(from_dir_path):   # 三个参数：分别返回1.父目录 2.所有文件夹名字（不含路径） 3.所有文件名字
+        for filename in filenames:  #遍历该目录下的所有存储path的json文件
+            roadfile= open(from_dir_path + os.sep + filename,'r')
+            text = roadfile.read()
+            roaddata = json.loads(text)  #获取到道路的数据集
+            roads_set.append(roaddata["data"])
+            roads_directions.append(roaddata["direction"])
+    return roads_set,roads_directions
+def poly_line_js(roads_set,roads_directions):
+    roads_set_str=json.dumps(roads_set)
+    road_directions_str=json.dumps(roads_directions)
+    js_code='var point_set='+roads_set_str+';\n'
+    js_code=js_code+'var roads_directions='+road_directions_str+';\n'
+    js_code=js_code+'for (var i = 0; i < point_set.length; i++) {\n'
+    js_code=js_code+'   var points_i=[];\n'
+    js_code=js_code+'   for (var j = 0; j < point_set[i].length; j++)\n'
+    js_code=js_code+'   { '
+    js_code=js_code+'       points_i.push(new BMap.Point(point_set[i][j][0], point_set[i][j][1]));\n'
+    js_code=js_code+'   }\n'
+    js_code=js_code+'   if (roads_directions[i]=="1")\n'
+    js_code=js_code+'   {\n'
+    js_code=js_code+'       var color="red";\n'
+    js_code=js_code+'   }\n'
+    js_code=js_code+'   else\n'
+    js_code=js_code+'   {\n'
+    js_code=js_code+'       var color="blue";\n'
+    js_code=js_code+'   }\n'
+    js_code=js_code+'   var polyline = new BMap.Polyline(points_i,{strokeColor:color, strokeWeight:3, strokeOpacity:1.0});\n'
+    js_code=js_code+'   map.addOverlay(polyline); \n' \
+                    '}'
+    return js_code
 if __name__ == '__main__':
-    excel_path=STATIC_ROOT+os.sep+"WFJBXX_ORG.xls"
-    road_dir=BASE_DIR+ os.sep+'data'+ os.sep + 'input' + os.sep +'road'
-    out_pickle_path=STATIC_ROOT+os.sep+"WFJBXX_ORG.pkl"
-    data_read_and_store(excel_path,out_pickle_path)
-
-    excel_exception_path = STATIC_ROOT+os.sep+"exception.xlsx"
-    out_exception_pickle_path = STATIC_ROOT + os.sep + "Exception.pkl"
-    #data_read_and_store(excel_exception_path, out_exception_pickle_path)
-
-    #将road_path整个目录下的path都存储成pkl格式
-    out_road_path=STATIC_ROOT+os.sep+'path.pkl'
-    road_read_and_store(road_dir,out_road_path)
-    out_newdata_path = STATIC_ROOT + os.sep + 'newdata.pkl'
-    label_points(out_pickle_path, out_road_path, out_newdata_path)
-
-
-    out_exception_data_path = STATIC_ROOT + os.sep + 'exceptiondata.pkl'
-    out_exception_js_path = STATIC_ROOT + os.sep + 'exceptionpoints.js'
-    #label_points(out_exception_pickle_path, out_road_path, out_exception_data_path,out_exception_js_path)
+    # excel_path=STATIC_ROOT+os.sep+"WFJBXX_ORG.xls"
+    # out_pickle_path=STATIC_ROOT+os.sep+"WFJBXX_ORG.pkl"
+    # data_read_and_store(excel_path,out_pickle_path)
+    #
+    # excel_exception_path = STATIC_ROOT+os.sep+"exception.xlsx"
+    # out_exception_pickle_path = STATIC_ROOT + os.sep + "Exception.pkl"
+    # #data_read_and_store(excel_exception_path, out_exception_pickle_path)
+    #
+    # #将road_path整个目录下的path都存储成pkl格式
+    # out_road_path=STATIC_ROOT+os.sep+'path.pkl'
+    # road_read_and_store(ROAD_DIR,out_road_path)
+    # out_newdata_path = STATIC_ROOT + os.sep + 'newdata.pkl'
+    # label_points(out_pickle_path, out_road_path, out_newdata_path)
+    #
+    #
+    # out_exception_data_path = STATIC_ROOT + os.sep + 'exceptiondata.pkl'
+    # out_exception_js_path = STATIC_ROOT + os.sep + 'exceptionpoints.js'
+    # #label_points(out_exception_pickle_path, out_road_path, out_exception_data_path,out_exception_js_path)
+    roads_set,roads_directions=get_all_paths()
+    poly_line_js(roads_set,roads_directions)
