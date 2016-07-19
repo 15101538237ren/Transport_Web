@@ -109,7 +109,7 @@
 	var top_left_navigation = new BMap.NavigationControl();  //左上角，添加默认缩放平移控件
     map.addControl(top_left_control);
     map.addControl(top_left_navigation);
-
+    map.enableKeyboard();
 {#    map.addEventListener("click",function(e){#}
 {#       //console.log(e.point.lng+ "," + e.point.lat);#}
 {#        alert(e.point.lng+","+e.point.lat);#}
@@ -254,6 +254,7 @@
         map.removeOverlay(now_overlay);
         $('#myModal').modal('show');
     }
+
 </script>
 </body>
 </html>
