@@ -44,12 +44,17 @@ def road_read_and_store(road_dir,pickle_path):
         for filename in filenames:  #遍历该目录下的所有存储path的json文件
             roadfile= open(road_dir + os.sep + filename,'r')
             text = roadfile.read()
-            try:
-                roaddata = json.loads(text)  #获取到道路的数据集
-            except ValueError as e:
-                print(e)
+            roaddata = json.loads(text)  #获取到道路的数据集
+            minX,maxX,minY,maxY = MAXINT,0,MAXINT,0
+            for road in roaddata['data']:
+                minX,maxX,minY,maxY=min(minX,road[0]),max(maxX,road[0]),min(minY,road[1]),max(maxY,road[1])
+            roaddata['minX'],roaddata['maxX'],roaddata['minY'],roaddata['maxY'] = minX,maxX,minY,maxY
+            roadfile = open(road_dir + os.sep + filename, 'w')
+            jsondata = json.dumps(roaddata,sort_keys=True,indent=4)
+            roadfile.write(jsondata)
             roadset.append(roaddata)
     pickle.dump(roadset, out_pickle, -1)
+    roadfile.close()
     out_pickle.close()
 
 
@@ -152,6 +157,8 @@ def label_points(data_path,road_path,out_data_path,out_newjsdata_path = STATIC_R
         for point in dataset[i]:  # 遍历dataset中的每一个数据点
             flag,minDis,pos = 0,MAXINT,0
             #pos用来记录与这个点离的最近的道路的index
+            if(not (roadset[j]['minX'] <= point[0] and point[0] <= roadset[j]['maXX'] and roadset[j]['minY'] <= point[1] and point[1] <= roadset[j]['maxY'])):
+                continue
             for j in range(len(roadset)):  # 遍历roadset中的每一条道路
                 [status,dis] = check_point(roadset[j]['data'],point[0],point[1])
                 if(status==1):
@@ -172,7 +179,7 @@ def label_points(data_path,road_path,out_data_path,out_newjsdata_path = STATIC_R
     except Exception as e:
         print(e)
     jsdata = 'var pathpoints={\"data\":'+ pathpoints_str + ',\"total\":' + str(len(pathpoints)) + ',\"rt_loc_cnt\":'+ str(len(pathpoints)) +\
-     ',\"errorno\": 0,\"NearestTime\": \"2014-08-29 15:20:00\",\"userTime\": \"2014-08-29 15:32:11\"}'
+     ',\"errorno\": 0,\"nearestTime\": \"2014-08-29 15:20:00\",\"userTime\": \"2014-08-29 15:32:11\"}'
     jsdatafile.write(jsdata)
     datafile.close()
     roadfile.close()
@@ -190,7 +197,7 @@ def convert_point_list_to_path_file(point_lists,direction):
         points_str='['+str(point["lng"])+', '+str(point["lat"])+']'
         points_str_list.append(points_str)
     json_str=json_str+(","+split).join(points_str_list)+split
-    json_str=json_str+'],'+split+'"total": '+str(len(point_lists))+','+split+'"rt_loc_cnt": '+str(len(point_lists))+','+split+'"errorno": 0,'+split+'"direction":'+str(direction)+','+split+'"NearestTime": "'+now_str+'",'+split+'"userTime": "'+now_str+'"'+'\n}'
+    json_str=json_str+'],'+split+'"total": '+str(len(point_lists))+','+split+'"rt_loc_cnt": '+str(len(point_lists))+','+split+'"errorno": 0,'+split+'"direction":'+str(direction)+','+split+'"nearestTime": "'+now_str+'",'+split+'"userTime": "'+now_str+'"'+'\n}'
     return json_str
 def get_all_paths(from_dir_path=ROAD_DIR):
     roads_set = []
@@ -234,6 +241,7 @@ if __name__ == '__main__':
     excel_path=STATIC_ROOT+os.sep+"WFJBXX_ORG.xls"
     out_pickle_path=STATIC_ROOT+os.sep+"WFJBXX_ORG.pkl"
     data_read_and_store(excel_path,out_pickle_path)
+<<<<<<< HEAD
 
     excel_exception_path = STATIC_ROOT+os.sep+"exception.xlsx"
     out_exception_pickle_path = STATIC_ROOT + os.sep + "Exception.pkl"
@@ -251,3 +259,22 @@ if __name__ == '__main__':
     #label_points(out_exception_pickle_path, out_road_path, out_exception_data_path,out_exception_js_path)
     roads_set,roads_directions=get_all_paths()
     poly_line_js(roads_set,roads_directions)
+=======
+    #
+    # excel_exception_path = STATIC_ROOT+os.sep+"exception.xlsx"
+    # out_exception_pickle_path = STATIC_ROOT + os.sep + "Exception.pkl"
+    # #data_read_and_store(excel_exception_path, out_exception_pickle_path)
+    #
+    # #将road_path整个目录下的path都存储成pkl格式
+    out_road_path=STATIC_ROOT+os.sep+'path.pkl'
+    road_read_and_store(ROAD_DIR,out_road_path)
+    out_labeled_points_path = STATIC_ROOT + os.sep + 'labeledpoints.pkl'
+    label_points(out_pickle_path, out_road_path, out_labeled_points_path)
+    #
+    #
+    # out_exception_data_path = STATIC_ROOT + os.sep + 'exceptiondata.pkl'
+    # out_exception_js_path = STATIC_ROOT + os.sep + 'exceptionpoints.js'
+    # #label_points(out_exception_pickle_path, out_road_path, out_exception_data_path,out_exception_js_path)
+    #roads_set,roads_directions=get_all_paths()
+    #poly_line_js(roads_set,roads_directions)
+>>>>>>> dc71b8d0973a00ffaaa8aaf5dd97d8c92741520d
