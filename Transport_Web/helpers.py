@@ -220,8 +220,9 @@ def poly_line_js(roads_set,roads_directions):
     js_code=js_code+'for (var i = 0; i < point_set.length; i++) {\n'
     js_code=js_code+'   var points_i=[];\n'
     js_code=js_code+'   for (var j = 0; j < point_set[i].length; j++)\n'
-    js_code=js_code+'   { '
-    js_code=js_code+'       points_i.push(new BMap.Point(point_set[i][j][0], point_set[i][j][1]));\n'
+    js_code=js_code+'   { \n'
+    js_code=js_code+'       var point_to_add=new BMap.Point(point_set[i][j][0], point_set[i][j][1]);\n'
+    js_code=js_code+'       points_i.push(point_to_add);\n'
     js_code=js_code+'   }\n'
     js_code=js_code+'   if (roads_directions[i]=="1")\n'
     js_code=js_code+'   {\n'
@@ -232,6 +233,9 @@ def poly_line_js(roads_set,roads_directions):
     js_code=js_code+'       var color="blue";\n'
     js_code=js_code+'   }\n'
     js_code=js_code+'   var polyline = new BMap.Polyline(points_i,{strokeColor:color, strokeWeight:3, strokeOpacity:1.0});\n'
+    js_code=js_code+'   polyline.addEventListener("click", function(e) {\n'
+    js_code=js_code+'   alert("单击点的坐标为：" + e.point.lng + "," + e.point.lat);\n'
+    js_code=js_code+'   });\n'
     js_code=js_code+'   map.addOverlay(polyline); \n' \
                     '}'
     return js_code
