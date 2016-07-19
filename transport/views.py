@@ -32,11 +32,11 @@ def region(request):
 def label_the_road(request):
     point_list_str=request.POST['point_list']
     direction=request.POST['direction']
-    print point_list_str+"\t"+direction
+    #print point_list_str+"\t"+direction
     point_list=json.loads(point_list_str)
     road_json=convert_point_list_to_path_file(point_list,direction)
     tz=pytz.timezone(pytz.country_timezones('cn')[0])
-    now_str=datetime.datetime.now(tz).strftime('%Y_%m_%d_%H:%M:%S')+".json"
+    now_str=datetime.datetime.now(tz).strftime('%Y_%m_%d_%H_%M_%S')+".json"
     road_file=open(ROAD_DIR+os.sep+now_str,"w")
     road_file.write(road_json)
     return HttpResponseRedirect(reverse('transport:index'))
