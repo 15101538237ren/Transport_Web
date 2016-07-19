@@ -48,7 +48,7 @@ def road_read_and_store(road_dir,pickle_path):
             except ValueError as e:
                 print(e)
             roadset.append(roaddata)
-    pickle.dump(roadset, out_pickle, 3)
+    pickle.dump(roadset, out_pickle, -1)
     out_pickle.close()
 
 

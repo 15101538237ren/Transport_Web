@@ -33,6 +33,7 @@ def label_the_road(request):
     print point_list_str+"\t"+direction
     point_list=json.loads(point_list_str)
     road_json=convert_point_list_to_path_file(point_list,direction)
+    now_str=datetime.datetime.now().strftime('%Y_%m_%d_%H:%M:%S')+".json"
     print road_json
     return HttpResponseRedirect(reverse('transport:index'))
 def showpath(request):
