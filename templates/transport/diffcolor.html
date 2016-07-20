@@ -14,7 +14,7 @@
         }
         #map{
             width:100%;
-            height:90%;
+            height:100%;
         }
         #panel {
             position: absolute;
@@ -56,45 +56,6 @@
           height: 20px;
           background: #113344;
         }
-        .nstSlider_div .leftGrip.gripHighlighted {
-          background: #113344;
-        }
-        .nstSlider_div .rightGrip.gripHighlighted {
-          background: #113344;
-        }
-        .nstSlider_div .rightGrip,
-        .nstSlider_div .leftGrip {
-          position: absolute;
-          -webkit-border-radius: 10px;
-          -moz-border-radius: 10px;
-          border-radius: 10px;
-          width: 20px;
-          height: 20px;
-          background: #ffffff;
-        }
-        .nstSlider_div .bar {
-          -webkit-border-radius: 10px;
-          -moz-border-radius: 10px;
-          border-radius: 10px;
-          position: absolute;
-          background: #ffffff;
-          height: 8px;
-          top: 6px;
-        }
-        .nstSlider_div .highlightPanel {
-          -webkit-transition: all 500ms ease-in-out;
-          -moz-transition: all 500ms ease-in-out;
-          -ms-transition: all 500ms ease-in-out;
-          -o-transition: all 500ms ease-in-out;
-          transition: all 500ms ease-in-out;
-          -webkit-border-radius: 10px;
-          -moz-border-radius: 10px;
-          border-radius: 10px;
-          position: absolute;
-          background: #e87722;
-          height: 20px;
-          top: 0;
-        }
     </style>
     <script type="text/javascript" src="http://api.map.baidu.com/api?v=2.0&ak=eM0GfCwd27kZRyM49ZOkvkOaidDXz6Wf"></script>
     <script type="text/javascript" src="http://api.map.baidu.com/library/DrawingManager/1.4/src/DrawingManager_min.js"></script>
@@ -102,40 +63,44 @@
     <script type="text/javascript" src="{% static "output/pathpoints.js" %}"></script>
     <script type="text/javascript" src="{% static "js/jquery-1.11.3.min.js" %}"></script>
 
-    <link rel="stylesheet" type="text/css" media="screen" href="{% static "css/jquery.nstSlider.css" %}" />
-    <script type="text/javascript" src="{% static "js/jquery.nstSlider.min.js" %}"></script>
-
     <link rel="stylesheet" type="text/css" media="screen" href="{% static "css/jquery-confirm.min.css" %}" />
     <script type="text/javascript" src="{% static "js/jquery-confirm.min.js" %}" charset="UTF-8"></script>
 
 
     <link rel="stylesheet" type="text/css" media="screen" href="{% static "css/bootstrap.min.css" %}" />
     <script type="text/javascript" src="{% static "js/bootstrap.min.js" %}" charset="UTF-8"></script>
+    <script type="text/javascript" src="{% static "js/option.js" %}"></script>
 </head>
 <body>
 <div id="map"></div>
-<div class="nstSlider_div" style="width:100%;height: 5%;" data-range_min="0" data-range_max="100"
-     data-cur_min="20"    data-cur_max="80">
+<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" >
+  <div class="modal-dialog" role="document" style="width:800px;height: 600px;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title" id="myModalLabel">echarts</h4>
+          <span class="text-primary">切换主题</span>
+          <select id="theme-select">
+                {% for theme in theme_names %}
+                    {% ifequal theme "helianthus" %}
+                        <option value="{{ theme }}" selected="selected">{{ theme }}</option>
+                    {% else %}
+                        <option value="{{ theme }}">{{ theme }}</option>
+                    {% endifequal %}
 
-    <div class="bar"></div>
-    <div class="leftGrip"></div>
-    <div class="rightGrip"></div>
+                {% endfor %}
+          </select>
+      </div>
+      <div class="modal-body" id="main" style="width: 800px; height: 600px;">
+
+      </div>
+      <div class="modal-footer">
+      </div>
+    </div>
+  </div>
 </div>
-    <div class="leftLabel" style="width:20%;height: 2.5%;">
-    </div>
-    <div class="rightLabel" style="width:20%;height: 2.5%;">
-    </div>
 <script type="text/javascript">
-    $('.nstSlider_div').nstSlider({
-        "crossable_handles": false,
-        "left_grip_selector": ".leftGrip",
-        "right_grip_selector": ".rightGrip",
-        "value_bar_selector": ".bar",
-        "value_changed_callback": function(cause, leftValue, rightValue) {
-            $(this).parent().find('.leftLabel').text(leftValue);
-            $(this).parent().find('.rightLabel').text(rightValue);
-        }
-    });
+
     var map = new BMap.Map("map", {});                        // 创建Map实例
     map.centerAndZoom(new BMap.Point(116.404, 39.915), 12);     // 初始化地图,设置中心点坐标和地图级别
     map.enableScrollWheelZoom(true);                        //启用滚轮放大缩小
@@ -144,9 +109,6 @@
     map.addControl(top_left_control);
     map.addControl(top_left_navigation);
 
-    map.addEventListener("click",function(e){
-       console.log("[" + e.point.lng+ "," + e.point.lat+"],");
-    });
     var noise_invisible={{ noise_invisible }};
     if (document.createElement('canvas').getContext) {  // 判断当前浏览器是否支持绘制海量点
         var points1 = [],points2 = [],points3 = [];  // 添加海量点数据
@@ -223,8 +185,10 @@
                     var addr = "/transport/region_statistics?" + "slat=" + sw.lng + "&slng=" + sw.lat + "&elat=" + ne.lng + "&elng=" + ne.lat;
                     $.get(addr, function (result) {
                         if (result.code == 0) {
-                            alert("区域内有" + result.message + "个点!哈哈");
+                            //alert("区域内有" + result.message + "个点!哈哈");
                             //overlays.push(e.overlay);
+                            //location.href = result.message;
+                            $('#myModal').modal('show');
                         }
                         else {
                             alert(result.message);
@@ -266,6 +230,37 @@
         }
         overlays.length = 0
     }
+
+</script>
+<script type="text/javascript" src="{% static "js/dist/echarts.js" %}"></script>
+<script type="text/javascript">
+            require.config({
+                paths: {
+                    echarts: '{% static "js/dist" %}'
+                }
+            });
+            var themes_dic = new Array();
+            var theme_names={{ theme_names | safe }};
+            var static_theme_url={{ static_theme_url |safe }};
+            for(var i = 0; i < static_theme_url.length; i++){
+                require([static_theme_url[i]], function(theme) {
+                themes_dic[theme_names[i]]=theme;
+            });
+            }
+
+
+            require(
+                [
+                    'echarts',
+                    'echarts/chart/line',   // 按需加载所需图表，如需动态类型切换功能，别忘了同时加载相应图表
+                    'echarts/chart/bar'
+                ],
+                function (ec) {
+                    var theme_selected=themes_dic['gray'];
+                    var myChart = ec.init(document.getElementById('main'),theme_selected);
+                    myChart.setOption(option);
+                }
+            );
 </script>
 </body>
 </html>
