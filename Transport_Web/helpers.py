@@ -53,7 +53,7 @@ def data_time_read_and_store(excel_path,pickle_path):
             try:
                 str_lat=table.row(i)[4].value
                 str_lon=table.row(i)[3].value
-                date = xlrd.xldate.xldate_as_datetime(table.row(i)[5].value, 0)
+                date = xlrd.xldate_as_tuple(table.row(i)[5].value, 0)
                 if str_lat!="" and str_lon!="":
                     lat=float(str_lat.encode("utf-8"))
                     lon=float(str_lon.encode("utf-8"))
@@ -193,21 +193,18 @@ def label_points(data_path,road_path,out_data_path,out_newjsdata_path = POINT_OU
                 [status,dis] = check_point(roadset[j]['data'],point[0],point[1])
                 if(status==1):
                     flag = 1
-                    pathpoints.append([point[0],point[1],roadset[j]['direction']])
+                    pathpoints.append([point[0],point[1],point[2],roadset[j]['direction']])
                     break
                 elif(status==2):
                     if(dis<minDis):
                         flag,pos,minDis = 2,j,min(minDis,dis)
 
             if(flag==0):
-                pathpoints.append([point[0], point[1], 0])
+                pathpoints.append([point[0], point[1], point[2],0])
             elif(flag==2):
-                pathpoints.append([point[0],point[1],roadset[pos]['direction']])
+                pathpoints.append([point[0],point[1],point[2],roadset[pos]['direction']])
     pickle.dump(pathpoints, labeldatafile, -1)
-    try:
-        pathpoints_str = json.dumps(pathpoints)
-    except Exception as e:
-        print(e)
+    pathpoints_str = json.dumps(pathpoints)
     jsdata = 'var pathpoints={\"data\":'+ pathpoints_str + ',\"total\":' + str(len(pathpoints)) + ',\"rt_loc_cnt\":'+ str(len(pathpoints)) +\
      ',\"errorno\": 0,\"nearestTime\": \"2014-08-29 15:20:00\",\"userTime\": \"2014-08-29 15:32:11\"}'
     jsdatafile.write(jsdata)
