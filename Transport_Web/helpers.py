@@ -97,14 +97,23 @@ def load_pickle_from(pickle_path=STATIC_ROOT+os.sep+'WFJBXX_ORG.pkl'):
 
 def get_point_in_region(data_list,slat,slng,elat,elng):
     point_list_ret=[]
+    minX,maxX,minY,maxY = MAXINT,0,MAXINT,0
     for lat_lng in data_list:
-        now_lat=lat_lng[0]
-        now_lng=lat_lng[1]
-        if now_lat >= slat and now_lat <= elat and now_lng >= elng and now_lng <=slng:
+        now_lng=lat_lng[0]
+        now_lat=lat_lng[1]
+        if now_lat >= elat and now_lat <= slat and now_lng >= slng and now_lng <=elng:
+            minX = min(minX,now_lng)
+            maxX = max(maxX,now_lng)
+            minY = min(minY,now_lat)
+            maxY = max(maxY,now_lat)
             point_list_ret.append(lat_lng)
     #print "%d points in region!" % len(point_list_ret)
     #print("%d points in region!" % len(point_list_ret))
-    return point_list_ret
+    print("minX = " + str(minX))
+    print("maxX = " + str(maxX))
+    print("minY = " + str(minY))
+    print("maxY = " + str(maxY))
+    return str(len(point_list_ret))
 
 #检查一个点是否在道路的多边形区域内
 #如果在多边形内，返回值为1
@@ -174,7 +183,8 @@ def check_point(dataset,lng,lat):
 
 
 #标注所有点，将标注了方向的数据点保存在新的文件中
-def label_points(data_path,road_path,out_data_path,out_newjsdata_path = POINT_OUTPUT_DIR + os.sep + 'pathpoints.js'):
+#type为0表示js文件中存储所有类型的数据点，type为1表示js文件中分不同类型存储数据点
+def label_points(data_path,road_path,out_data_path,type,out_newjsdata_path = POINT_OUTPUT_DIR + os.sep + 'pathpoints.js'):
     datafile = open(data_path, 'rb')
     roadfile = open(road_path, 'rb')
     labeldatafile = open(out_data_path, 'wb')
@@ -195,7 +205,8 @@ def label_points(data_path,road_path,out_data_path,out_newjsdata_path = POINT_OU
                 if(status==1):
                     flag = 1
                     typepoints.append([point[0],point[1],point[2],roadset[j]['direction']])
-                    pathpoints_js.append([point[0], point[1], point[2], roadset[j]['direction']])
+                    if(type==0):
+                        pathpoints_js.append([point[0], point[1], point[2], roadset[j]['direction']])
                     break
                 elif(status==2):
                     if(dis<minDis):
@@ -203,13 +214,18 @@ def label_points(data_path,road_path,out_data_path,out_newjsdata_path = POINT_OU
 
             if(flag==0):
                 typepoints.append([point[0], point[1], point[2],0])
-                pathpoints_js.append([point[0], point[1], point[2], 0])
+                if(type==0):
+                    pathpoints_js.append([point[0], point[1], point[2], 0])
             elif(flag==2):
                 typepoints.append([point[0], point[1], point[2], roadset[pos]['direction']])
-                pathpoints_js.append([point[0], point[1], point[2], roadset[pos]['direction']])
+                if(type==0):
+                    pathpoints_js.append([point[0], point[1], point[2], roadset[pos]['direction']])
         pathpoints.append(typepoints)
     pickle.dump(pathpoints, labeldatafile, -1)
-    pathpoints_str = json.dumps(pathpoints_js)
+    if(type==0):
+        pathpoints_str = json.dumps(pathpoints_js)
+    else:
+        pathpoints_str = json.dumps(pathpoints)
     jsdata = 'var pathpoints={\"data\":'+ pathpoints_str + ',\"total\":' + str(len(pathpoints_js)) + ',\"rt_loc_cnt\":'+ str(len(pathpoints_js)) +\
      ',\"errorno\": 0,\"nearestTime\": \"2014-08-29 15:20:00\",\"userTime\": \"2014-08-29 15:32:11\"}'
     jsdatafile.write(jsdata)
@@ -292,11 +308,11 @@ if __name__ == '__main__':
     out_road_path=STATIC_ROOT+os.sep+'path.pkl'
     road_read_and_store(ROAD_DIR,out_road_path)
     out_labeled_points_path = STATIC_ROOT + os.sep + 'labeledpoints.pkl'
-    label_points(out_pickle_path, out_road_path, out_labeled_points_path)
+    label_points(out_pickle_path, out_road_path, out_labeled_points_path,1)
     #
     #
     # out_exception_data_path = STATIC_ROOT + os.sep + 'exceptiondata.pkl'
     # out_exception_js_path = STATIC_ROOT + os.sep + 'exceptionpoints.js'
-    # #label_points(out_exception_pickle_path, out_road_path, out_exception_data_path,out_exception_js_path)
+    # #label_points(out_exception_pickle_path, out_road_path, out_exception_data_path,0,out_exception_js_path)
     #roads_set,roads_directions=get_all_paths()
     #poly_line_js(roads_set,roads_directions)
