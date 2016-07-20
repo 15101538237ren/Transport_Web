@@ -74,6 +74,8 @@ TEMPLATES = [
 ]
 
 STATIC_ROOT = normpath(join(BASE_DIR,  'static','assets'))
+
+
 STATICFILES_DIRS = ( normpath(join(BASE_DIR,  'static')),normpath(join(BASE_DIR,  'data')))
 
 STATIC_URL = '/static/'

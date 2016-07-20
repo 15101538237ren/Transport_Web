@@ -210,7 +210,7 @@ def label_points(data_path,road_path,out_data_path,out_newjsdata_path = POINT_OU
         pathpoints.append(typepoints)
     pickle.dump(pathpoints, labeldatafile, -1)
     pathpoints_str = json.dumps(pathpoints_js)
-    jsdata = 'var pathpoints={\"data\":'+ pathpoints_str + ',\"total\":' + str(len(pathpoints)) + ',\"rt_loc_cnt\":'+ str(len(pathpoints)) +\
+    jsdata = 'var pathpoints={\"data\":'+ pathpoints_str + ',\"total\":' + str(len(pathpoints_js)) + ',\"rt_loc_cnt\":'+ str(len(pathpoints_js)) +\
      ',\"errorno\": 0,\"nearestTime\": \"2014-08-29 15:20:00\",\"userTime\": \"2014-08-29 15:32:11\"}'
     jsdatafile.write(jsdata)
     datafile.close()
@@ -269,11 +269,15 @@ def poly_line_js(roads_set,roads_directions):
     js_code=js_code+'   map.addOverlay(polyline); \n' \
                     '}'
     return js_code
+
+
+
+
 if __name__ == '__main__':
 
     excel_path=STATIC_ROOT+os.sep+"WFJBXX_ORG.xls"
     out_pickle_path=STATIC_ROOT+os.sep+"WFJBXX_ORG.pkl"
-    #data_read_and_store(excel_path,out_pickle_path)
+    data_read_and_store(excel_path,out_pickle_path)
     data_time_read_and_store(excel_path,out_pickle_path)
     data_file=open(out_pickle_path,"rb")
     dataset = pickle.load(data_file)  # 获取所有数据点的list
