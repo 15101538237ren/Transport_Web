@@ -36,8 +36,8 @@ def region_statistics(request):
     elng=float(request.GET.get("elng"))
     print(u"左上经纬度：" + str(slat) + u"," + str(slng) + u", 右下经纬度:" + str(elat) + u"," + str(elng))
     table_arr=load_pickle_from(STATIC_ROOT + os.sep + 'labeledpoints.pkl')
-    data_points=get_points_in_region(table_arr,slat,slng,elat,elng)
-    return success_response(data_points)
+    data_points_json=get_points_in_region(table_arr,slat,slng,elat,elng)
+    return success_response(data_points_json)
 
 def get_points_in_region(table_arr,slat,slng,elat,elng):
     points_info_dict = {'date_list':[]}
@@ -103,7 +103,6 @@ def get_points_in_region(table_arr,slat,slng,elat,elng):
         date_list.append([datetmp.year,datetmp.month,datetmp.day,datetmp.hour,datetmp.minute,datetmp.second])
     points_info_dict['date_list'] = date_list
     jsonstr = json.dumps(points_info_dict,sort_keys=True,indent=4)
-    print(jsonstr)
     return jsonstr
 
 #type用来区分经度还是纬度，0表示纬度，1表示经度

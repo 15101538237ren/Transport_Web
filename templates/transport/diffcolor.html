@@ -74,7 +74,7 @@
 <body>
 <div id="map"></div>
 <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" >
-  <div class="modal-dialog" role="document" style="width:800px;height: 600px;">
+  <div class="modal-dialog" role="document" style="width:1200px;height: 600px;">
     <div class="modal-content">
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
@@ -93,7 +93,7 @@
           </select>
         </div>
       </div>
-      <div class="modal-body" id="main" style="width: 800px; height: 600px;">
+      <div class="modal-body" id="main" style="width:1200px;height: 600px;">
 
       </div>
       <div class="modal-footer">
@@ -187,9 +187,10 @@
                     var addr = "/transport/region_statistics?" + "slng=" + sw.lng + "&slat=" + sw.lat + "&elng=" + ne.lng + "&elat=" + ne.lat;
                     $.get(addr, function (result) {
                         if (result.code == 0) {
-                            //alert("区域内有" + result.message + "个点!哈哈");
-                            //overlays.push(e.overlay);
-                            //location.href = result.message;
+                            rtn_json=JSON.parse(result.message);
+                            date_list=rtn_json.date_list;
+                            type_data_list=[rtn_json.type1,rtn_json.type2,rtn_json.type3,rtn_json.type4];
+                            series_data=option.series[0].data;
                             $('#myModal').modal('show');
                         }
                         else {
