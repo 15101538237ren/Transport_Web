@@ -109,10 +109,6 @@ def get_point_in_region(data_list,slat,slng,elat,elng):
             point_list_ret.append(lat_lng)
     #print "%d points in region!" % len(point_list_ret)
     #print("%d points in region!" % len(point_list_ret))
-    print("minX = " + str(minX))
-    print("maxX = " + str(maxX))
-    print("minY = " + str(minY))
-    print("maxY = " + str(maxY))
     return str(len(point_list_ret))
 
 #检查一个点是否在道路的多边形区域内
@@ -308,7 +304,7 @@ if __name__ == '__main__':
     out_road_path=STATIC_ROOT+os.sep+'path.pkl'
     road_read_and_store(ROAD_DIR,out_road_path)
     out_labeled_points_path = STATIC_ROOT + os.sep + 'labeledpoints.pkl'
-    label_points(out_pickle_path, out_road_path, out_labeled_points_path,1)
+    label_points(out_pickle_path, out_road_path, out_labeled_points_path,0)
     #
     #
     # out_exception_data_path = STATIC_ROOT + os.sep + 'exceptiondata.pkl'

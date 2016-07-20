@@ -48,49 +48,43 @@ def get_points_in_region(table_arr,slat,slng,elat,elng):
 
     for i in range(length):
         try:
-            table = sorted(table_arr[i],key=itemgetter(0,1,2))  #得到一种违章类型的list,线按照纬度排序，然后按照经度排序,再按照时间排序
+            table = sorted(table_arr[i],key=itemgetter(0))  #得到一种违章类型的list,线按照纬度排序，然后按照经度排序,再按照时间排序
             min_lng_index = lower_bound_search(table,0,len(table),slng,0)
-            max_lng_index = upper_bound_search(table,0,len(table),elng,0)
-            min_index = lower_bound_search(table,min_lng_index,max_lng_index+1,elat,1)
-            max_index = upper_bound_search(table,max_lng_index,max_lng_index+1,slat,1)
-            posNum,negNum = 0,0
+            max_lng_index = upper_bound_search(table,0,len(table),elng,0)-1
+            sub_table = sorted(table[min_lng_index:max_lng_index+1],key=itemgetter(1))
+            min_index = lower_bound_search(sub_table,0,len(sub_table),elat,1)
+            max_index = upper_bound_search(sub_table,0,len(sub_table),slat,1)-1
             data_list = []
             date_index = {}
             date_num=0
-            print(table[min_index][0],table[min_index][1])
-            print("-------")
-            print(table[max_index][0],table[max_index][1])
-            print(get_point_in_region(table,slat,slng,elat,elng))
-            print(max_index-min_index+1)
-            #for j in range(min_index,max_index+1):
-            for j in range(len(table)):
-                if(slng <=table[j][0] and table[j][0]<= elng and elat <= table[j][1] and table[j][1] <slat):
-                    date = table[j][2]  #这是date的tuple
-                    '''date_hour = datetime.datetime(*tuple(table[j][2])[:4])
-                    if(date_hour<date_hour_min):
-                        date_hour_min = date_hour
-                    if(date_hour>date_hour_max):
-                        date_hour_max = date_hour'''
+            for j in range(min_index,max_index+1):
+            #for j in range(len(table)):
+                #if(slng <=table[j][0] and table[j][0]<= elng and elat <= table[j][1] and table[j][1] <slat):
+                date = table[j][2]  #这是date的tuple
+                '''date_hour = datetime.datetime(*tuple(table[j][2])[:4])
+                if(date_hour<date_hour_min):
+                    date_hour_min = date_hour
+                if(date_hour>date_hour_max):
+                    date_hour_max = date_hour'''
 
-                    str_day = str(date[0]) + str(date[1]) +str(date[2])+str(date[3])  #将日期存成字符串
+                str_day = str(date[0]) + str(date[1]) +str(date[2])+str(date[3])  #将日期存成字符串
 
-                    day_index = date_index.get(str_day,-1)
-                    if(day_index == -1): #表示data_index里面没有这个字段
-                        date_index[str_day] = date_num;
-                        day_info = {'datatime':table[j][2][:4],'posNum':0,'negNum':0}
-                        if(table[j][3]==1):
-                            day_info['posNum'] += 1
-                        else:
-                            day_info['negNum'] += 1
-                        data_list.append(day_info)
-                        date_num += 1
+                day_index = date_index.get(str_day,-1)
+                if(day_index == -1): #表示data_index里面没有这个字段
+                    date_index[str_day] = date_num;
+                    day_info = {'datatime':table[j][2][:4],'posNum':0,'negNum':0}
+                    if(table[j][3]==1):
+                        day_info['posNum'] += 1
                     else:
-                        day_info = data_list[day_index]
-                        if (table[j][3] == 1):
-                            day_info['posNum'] += 1
-                        else:
-                            day_info['negNum'] += 1
-
+                        day_info['negNum'] += 1
+                    data_list.append(day_info)
+                    date_num += 1
+                else:
+                    day_info = data_list[day_index]
+                    if (table[j][3] == 1):
+                        day_info['posNum'] += 1
+                    else:
+                        day_info['negNum'] += 1
             data_list = sorted(data_list,key=itemgetter('datatime'))
             points_info_dict['type'+str(i+1)]= data_list
 
@@ -126,7 +120,7 @@ def lower_bound_search(table,l,r,num,type):
 def upper_bound_search(table,l,r,num,type):
     while(l<r):
         mid=l+(r-l)/2
-        if(table[mid][type]<=num):
+        if(table[mid][type] < num):
             l=mid+1
         else:
             r=mid
