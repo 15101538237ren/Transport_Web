@@ -190,7 +190,21 @@
                             rtn_json=JSON.parse(result.message);
                             date_list=rtn_json.date_list;
                             type_data_list=[rtn_json.type1,rtn_json.type2,rtn_json.type3,rtn_json.type4];
-                            series_data=option.series[0].data;
+                            for(var i = 0; i < 2*type_data_list.length; i++){
+                                option.series[i].data=(function () {
+                                                    var d = [];
+                                                    var len = 0;
+                                                    var now = new Date(2016, 6, 2, 0, 0);
+                                                    var value;
+                                                    while (len++ < 7*24) {
+                                                        d.push([
+                                                            new Date(2016, 5, 27, len, 0),
+                                                            (Math.random()*40).toFixed(2) - 0
+                                                        ]);
+                                                    }
+                                                    return d;
+                                                })()
+                            }
                             $('#myModal').modal('show');
                         }
                         else {
