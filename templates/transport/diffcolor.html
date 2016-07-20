@@ -14,7 +14,7 @@
         }
         #map{
             width:100%;
-            height:100%;
+            height:90%;
         }
         #panel {
             position: absolute;
@@ -44,12 +44,66 @@
             display:inline-block;
             line-height:38px;
         }
+
+        .nstSlider_div {
+          cursor: hand;
+          cursor: pointer;
+          -webkit-border-radius: 10px;
+          -moz-border-radius: 10px;
+          border-radius: 10px;
+          position: relative;
+          width: 300px;
+          height: 20px;
+          background: #113344;
+        }
+        .nstSlider_div .leftGrip.gripHighlighted {
+          background: #113344;
+        }
+        .nstSlider_div .rightGrip.gripHighlighted {
+          background: #113344;
+        }
+        .nstSlider_div .rightGrip,
+        .nstSlider_div .leftGrip {
+          position: absolute;
+          -webkit-border-radius: 10px;
+          -moz-border-radius: 10px;
+          border-radius: 10px;
+          width: 20px;
+          height: 20px;
+          background: #ffffff;
+        }
+        .nstSlider_div .bar {
+          -webkit-border-radius: 10px;
+          -moz-border-radius: 10px;
+          border-radius: 10px;
+          position: absolute;
+          background: #ffffff;
+          height: 8px;
+          top: 6px;
+        }
+        .nstSlider_div .highlightPanel {
+          -webkit-transition: all 500ms ease-in-out;
+          -moz-transition: all 500ms ease-in-out;
+          -ms-transition: all 500ms ease-in-out;
+          -o-transition: all 500ms ease-in-out;
+          transition: all 500ms ease-in-out;
+          -webkit-border-radius: 10px;
+          -moz-border-radius: 10px;
+          border-radius: 10px;
+          position: absolute;
+          background: #e87722;
+          height: 20px;
+          top: 0;
+        }
     </style>
     <script type="text/javascript" src="http://api.map.baidu.com/api?v=2.0&ak=eM0GfCwd27kZRyM49ZOkvkOaidDXz6Wf"></script>
     <script type="text/javascript" src="http://api.map.baidu.com/library/DrawingManager/1.4/src/DrawingManager_min.js"></script>
     <link rel="stylesheet" href="http://api.map.baidu.com/library/DrawingManager/1.4/src/DrawingManager_min.css" />
     <script type="text/javascript" src="{% static "output/pathpoints.js" %}"></script>
     <script type="text/javascript" src="{% static "js/jquery-1.11.3.min.js" %}"></script>
+
+    <link rel="stylesheet" type="text/css" media="screen" href="{% static "css/jquery.nstSlider.css" %}" />
+    <script type="text/javascript" src="{% static "js/jquery.nstSlider.min.js" %}"></script>
 
     <link rel="stylesheet" type="text/css" media="screen" href="{% static "css/jquery-confirm.min.css" %}" />
     <script type="text/javascript" src="{% static "js/jquery-confirm.min.js" %}" charset="UTF-8"></script>
@@ -60,7 +114,28 @@
 </head>
 <body>
 <div id="map"></div>
+<div class="nstSlider_div" style="width:100%;height: 5%;" data-range_min="0" data-range_max="100"
+     data-cur_min="20"    data-cur_max="80">
+
+    <div class="bar"></div>
+    <div class="leftGrip"></div>
+    <div class="rightGrip"></div>
+</div>
+    <div class="leftLabel" style="width:20%;height: 2.5%;">
+    </div>
+    <div class="rightLabel" style="width:20%;height: 2.5%;">
+    </div>
 <script type="text/javascript">
+    $('.nstSlider_div').nstSlider({
+        "crossable_handles": false,
+        "left_grip_selector": ".leftGrip",
+        "right_grip_selector": ".rightGrip",
+        "value_bar_selector": ".bar",
+        "value_changed_callback": function(cause, leftValue, rightValue) {
+            $(this).parent().find('.leftLabel').text(leftValue);
+            $(this).parent().find('.rightLabel').text(rightValue);
+        }
+    });
     var map = new BMap.Map("map", {});                        // 创建Map实例
     //map.setMapStyle({style:'googlelite'});
     map.centerAndZoom(new BMap.Point(116.404, 39.915), 12);     // 初始化地图,设置中心点坐标和地图级别
@@ -121,47 +196,47 @@
 
     var overlays = [];
 	var overlaycomplete = function(e){
-        overlays.push(e.overlay);
-        var olRectPoint = e.overlay.ro;
-        /* *.Nk是从 e 的dom节点中寻找到的，百度本身没有提供此方法的介绍。
-         * olRectPoint坐标排序方式
-         *	┌─────────────────────┐
-         *	│0					1 │
-         *	│					  │
-         *	│3					2 │
-         *	└─────────────────────┘
-         * */
-        var sw = olRectPoint[0];		//左上
-        var ne = olRectPoint[2];		//右下
-        //alert('左上：'+ sw.lng+',' + sw.lat + '    右下：'+ne.lng+','+ne.lat);
+        if (e.drawingMode=="rectangle") {//画矩形结束
+            var olRectPoint = e.overlay.ro;
+            /* *.Nk是从 e 的dom节点中寻找到的，百度本身没有提供此方法的介绍。
+             * olRectPoint坐标排序方式
+             *	┌─────────────────────┐
+             *	│0					1 │
+             *	│					  │
+             *	│3					2 │
+             *	└─────────────────────┘
+             * */
+            var sw = olRectPoint[0];		//左上
+            var ne = olRectPoint[2];		//右下
+            //alert('左上：'+ sw.lng+',' + sw.lat + '    右下：'+ne.lng+','+ne.lat);
 
-        $.confirm({
+            $.confirm({
                 confirmButtonClass: 'btn-info',
                 cancelButtonClass: 'btn-danger',
 
                 keyboardEnabled: true,
                 title: '信息',
                 content: '是否选择当前区域中的数据点?',
-                confirmButton:'是',
-                cancelButton:'否',
-                closeIcon:true,
-                confirm: function(){
-                    var addr="/transport/region?"+"slat="+sw.lng+"&slng="+sw.lat+"&elat="+ne.lng+"&elng="+ne.lat;
-                    $.get(addr,function(result){
-                      if(result.code == 0){
-                          alert("区域内有"+result.message+"个点!");
-                      }
-                      else
-                      {
-                          alert(result.message);
-                      }
+                confirmButton: '是',
+                cancelButton: '否',
+                closeIcon: true,
+                confirm: function () {
+                    var addr = "/transport/region_statistics?" + "slat=" + sw.lng + "&slng=" + sw.lat + "&elat=" + ne.lng + "&elng=" + ne.lat;
+                    $.get(addr, function (result) {
+                        if (result.code == 0) {
+                            alert("区域内有" + result.message + "个点!哈哈");
+                            //overlays.push(e.overlay);
+                        }
+                        else {
+                            alert(result.message);
+                        }
                     });
                 },
-                cancel:function(){
-                    clearAll();
+                cancel: function () {
+                    map.removeOverlay(e.overlay);
                 }
             });
-
+        }
     };
     var styleOptions = {
         strokeColor:"blue",    //边线颜色。
