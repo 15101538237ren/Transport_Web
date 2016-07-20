@@ -179,10 +179,11 @@ def label_points(data_path,road_path,out_data_path,out_newjsdata_path = POINT_OU
     roadfile = open(road_path, 'rb')
     labeldatafile = open(out_data_path, 'wb')
     jsdatafile = open(out_newjsdata_path,'w')
-    pathpoints = []
+    pathpoints,pathpoints_js = [],[]
     dataset = pickle.load(datafile)  # 获取所有数据点的list
     roadset = pickle.load(roadfile)  # 获取到所有road的list
     for i in range(len(dataset)):  #遍历excel数据中的len(dataset)个sheet
+        typepoints = []
         for point in dataset[i]:  # 遍历dataset中的每一个数据点
             flag,minDis,pos = 0,MAXINT,0
             #pos用来记录与这个点离的最近的道路的index
@@ -193,18 +194,22 @@ def label_points(data_path,road_path,out_data_path,out_newjsdata_path = POINT_OU
                 [status,dis] = check_point(roadset[j]['data'],point[0],point[1])
                 if(status==1):
                     flag = 1
-                    pathpoints.append([point[0],point[1],point[2],roadset[j]['direction']])
+                    typepoints.append([point[0],point[1],point[2],roadset[j]['direction']])
+                    pathpoints_js.append([point[0], point[1], point[2], roadset[j]['direction']])
                     break
                 elif(status==2):
                     if(dis<minDis):
                         flag,pos,minDis = 2,j,min(minDis,dis)
 
             if(flag==0):
-                pathpoints.append([point[0], point[1], point[2],0])
+                typepoints.append([point[0], point[1], point[2],0])
+                pathpoints_js.append([point[0], point[1], point[2], roadset[pos]['direction']])
             elif(flag==2):
-                pathpoints.append([point[0],point[1],point[2],roadset[pos]['direction']])
+                typepoints.append([point[0], point[1], point[2], roadset[pos]['direction']])
+                pathpoints_js.append([point[0], point[1], point[2], roadset[pos]['direction']])
+        pathpoints.append(typepoints)
     pickle.dump(pathpoints, labeldatafile, -1)
-    pathpoints_str = json.dumps(pathpoints)
+    pathpoints_str = json.dumps(pathpoints_js)
     jsdata = 'var pathpoints={\"data\":'+ pathpoints_str + ',\"total\":' + str(len(pathpoints)) + ',\"rt_loc_cnt\":'+ str(len(pathpoints)) +\
      ',\"errorno\": 0,\"nearestTime\": \"2014-08-29 15:20:00\",\"userTime\": \"2014-08-29 15:32:11\"}'
     jsdatafile.write(jsdata)
@@ -269,7 +274,7 @@ if __name__ == '__main__':
     excel_path=STATIC_ROOT+os.sep+"WFJBXX_ORG.xls"
     out_pickle_path=STATIC_ROOT+os.sep+"WFJBXX_ORG.pkl"
     #data_read_and_store(excel_path,out_pickle_path)
-    #data_time_read_and_store(excel_path,out_pickle_path)
+    data_time_read_and_store(excel_path,out_pickle_path)
     data_file=open(out_pickle_path,"rb")
     dataset = pickle.load(data_file)  # 获取所有数据点的list
     data_file.close()
@@ -279,11 +284,11 @@ if __name__ == '__main__':
     # out_exception_pickle_path = STATIC_ROOT + os.sep + "Exception.pkl"
     # #data_read_and_store(excel_exception_path, out_exception_pickle_path)
     #
-    # #将road_path整个目录下的path都存储成pkl格式
-    # out_road_path=STATIC_ROOT+os.sep+'path.pkl'
-    # road_read_and_store(ROAD_DIR,out_road_path)
-    # out_labeled_points_path = STATIC_ROOT + os.sep + 'labeledpoints.pkl'
-    # label_points(out_pickle_path, out_road_path, out_labeled_points_path)
+    #将road_path整个目录下的path都存储成pkl格式
+    out_road_path=STATIC_ROOT+os.sep+'path.pkl'
+    road_read_and_store(ROAD_DIR,out_road_path)
+    out_labeled_points_path = STATIC_ROOT + os.sep + 'labeledpoints.pkl'
+    label_points(out_pickle_path, out_road_path, out_labeled_points_path)
     #
     #
     # out_exception_data_path = STATIC_ROOT + os.sep + 'exceptiondata.pkl'
