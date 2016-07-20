@@ -28,6 +28,16 @@ def region(request):
     table_1=table_arr[0]
     data_points=get_point_in_region(table_1,slat,slng,elat,elng)
     return success_response(str(len(data_points)))
+def region_statistics(request):
+    slat=float(request.GET.get("slat"))
+    slng=float(request.GET.get("slng"))
+    elat=float(request.GET.get("elat"))
+    elng=float(request.GET.get("elng"))
+    print(u"左上经纬度：" + str(slat) + u"," + str(slng) + u", 右下经纬度:" + str(elat) + u"," + str(elng))
+    table_arr=load_pickle_from(STATIC_ROOT+os.sep+"WFJBXX_ORG.pkl")
+    table_1=table_arr[0]
+    data_points=get_point_in_region(table_1,slat,slng,elat,elng)
+    return success_response(str(len(data_points)))
 @require_POST
 def label_the_road(request):
     point_list_str=request.POST['point_list']
@@ -41,4 +51,5 @@ def label_the_road(request):
     road_file.write(road_json)
     return HttpResponseRedirect(reverse('transport:index'))
 def showpath(request):
+    noise_invisible=int(request.GET.get("noise_invisible",0))
     return render(request, 'transport/diffcolor.html',locals())
