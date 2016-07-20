@@ -141,12 +141,12 @@
         var pointCollection1 = new BMap.PointCollection(points1, options1);  // 初始化PointCollection
         var pointCollection2 = new BMap.PointCollection(points2, options2);  // 初始化PointCollection
         var pointCollection3 = new BMap.PointCollection(points3, options3);  // 初始化PointCollection
-        pointCollection1.addEventListener('click', function (e) {
-            alert('单击点的坐标为：' + e.point.lng + ',' + e.point.lat);  // 监听点击事件
-        });
-        pointCollection2.addEventListener('click', function (e) {
-            alert('单击点的坐标为：' + e.point.lng + ',' + e.point.lat);  // 监听点击事件
-        });
+{#        pointCollection1.addEventListener('click', function (e) {#}
+{#            alert('单击点的坐标为：' + e.point.lng + ',' + e.point.lat);  // 监听点击事件#}
+{#        });#}
+{#        pointCollection2.addEventListener('click', function (e) {#}
+{#            alert('单击点的坐标为：' + e.point.lng + ',' + e.point.lat);  // 监听点击事件#}
+{#        });#}
 
         map.addOverlay(pointCollection1);  // 添加Overlay
         map.addOverlay(pointCollection2);  // 添加Overlay
