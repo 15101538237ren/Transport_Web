@@ -78,8 +78,9 @@
     <div class="modal-content">
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-        <h4 class="modal-title" id="myModalLabel">echarts</h4>
-          <span class="text-primary">切换主题</span>
+        <h4 class="modal-title" id="myModalLabel" align="center">{{ title }}与时间的关系</h4>
+        <div align="right">
+          <span >切换主题</span>
           <select id="theme-select">
                 {% for theme in theme_names %}
                     {% ifequal theme "helianthus" %}
@@ -90,6 +91,7 @@
 
                 {% endfor %}
           </select>
+        </div>
       </div>
       <div class="modal-body" id="main" style="width: 800px; height: 600px;">
 

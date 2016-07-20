@@ -62,6 +62,7 @@ def showpath(request):
         static_theme_url.append('/static/theme/'+theme_name)
         theme_names.append(theme_name)
     selected_index=5
+    title="举报量"
     return render(request, 'transport/diffcolor.html',locals())
 def echarts(request):
     return render(request, 'transport/echarts.html',locals())
