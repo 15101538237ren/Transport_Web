@@ -203,7 +203,7 @@ def label_points(data_path,road_path,out_data_path,out_newjsdata_path = POINT_OU
 
             if(flag==0):
                 typepoints.append([point[0], point[1], point[2],0])
-                pathpoints_js.append([point[0], point[1], point[2], roadset[pos]['direction']])
+                pathpoints_js.append([point[0], point[1], point[2], 0])
             elif(flag==2):
                 typepoints.append([point[0], point[1], point[2], roadset[pos]['direction']])
                 pathpoints_js.append([point[0], point[1], point[2], roadset[pos]['direction']])
