@@ -234,18 +234,28 @@
 </script>
 <script type="text/javascript" src="{% static "js/dist/echarts.js" %}"></script>
 <script type="text/javascript">
+            var myChart;
             require.config({
                 paths: {
                     echarts: '{% static "js/dist" %}'
                 }
             });
-            var themes_dic = new Array();
+            var themes_index_dic = {};
+            var themes_dic=[];
             var theme_names={{ theme_names | safe }};
             var static_theme_url={{ static_theme_url |safe }};
-            for(var i = 0; i < static_theme_url.length; i++){
-                require([static_theme_url[i]], function(theme) {
-                themes_dic[theme_names[i]]=theme;
-            });
+            len=static_theme_url.length;
+            for(var icont = 0; icont < len; icont++){
+                i_num=icont;
+                //alert(i_num);
+                url=static_theme_url[i_num];
+
+                theme_name=theme_names[i_num].toString();
+                require([url], function(theme) {
+                    themes_dic.push(theme);
+                }
+                );
+                themes_index_dic[theme_name]=i_num;
             }
 
 
@@ -256,11 +266,36 @@
                     'echarts/chart/bar'
                 ],
                 function (ec) {
-                    var theme_selected=themes_dic['gray'];
-                    var myChart = ec.init(document.getElementById('main'),theme_selected);
+                    var theme_selected=themes_dic[themes_index_dic["helianthus"]];
+                    myChart = ec.init(document.getElementById('main'),theme_selected);
                     myChart.setOption(option);
                 }
             );
+            var themeSelector = $('#theme-select');
+            $(themeSelector).on('change', function(){
+                selectChange($(this).val());
+            });
+            function selectChange(value){
+                var theme = value;
+                myChart.showLoading();
+                $(themeSelector).val(theme);
+                if (theme != 'default') {
+                    window.location.hash = value;
+                    require(['/static/theme/' + theme], function(tarTheme){
+                        curTheme = tarTheme;
+                        setTimeout(refreshTheme, 500);
+                    })
+                }
+                else {
+                    window.location.hash ='';
+                    curTheme = {};
+                    setTimeout(refreshTheme, 500);
+                }
+            }
+            function refreshTheme(){
+                myChart.hideLoading();
+                myChart.setTheme(curTheme);
+            }
 </script>
 </body>
 </html>
