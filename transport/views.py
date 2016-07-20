@@ -36,6 +36,7 @@ def region_statistics(request):
     elng=float(request.GET.get("elng"))
     print(u"左上经纬度：" + str(slat) + u"," + str(slng) + u", 右下经纬度:" + str(elat) + u"," + str(elng))
     table_arr=load_pickle_from(STATIC_ROOT + os.sep + 'labeledpoints.pkl')
+
     data_points_json=get_points_in_region(table_arr,slat,slng,elat,elng)
     return success_response(data_points_json)
 
@@ -151,6 +152,7 @@ def showpath(request):
         theme_names.append(theme_name)
     selected_index=5
     title="举报量"
+    data_type=int(request.GET.get("data_type",0))
     return render(request, 'transport/diffcolor.html',locals())
 def echarts(request):
     return render(request, 'transport/echarts.html',locals())

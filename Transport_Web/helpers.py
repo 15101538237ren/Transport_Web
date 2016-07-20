@@ -304,7 +304,8 @@ if __name__ == '__main__':
     out_road_path=STATIC_ROOT+os.sep+'path.pkl'
     road_read_and_store(ROAD_DIR,out_road_path)
     out_labeled_points_path = STATIC_ROOT + os.sep + 'labeledpoints.pkl'
-    label_points(out_pickle_path, out_road_path, out_labeled_points_path,0)
+    #label_points(out_pickle_path, out_road_path, out_labeled_points_path,1)
+    label_points(out_pickle_path, out_road_path, out_labeled_points_path,0,POINT_OUTPUT_DIR + os.sep + 'pathpoints_all.js')
     #
     #
     # out_exception_data_path = STATIC_ROOT + os.sep + 'exceptiondata.pkl'
