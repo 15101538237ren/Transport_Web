@@ -1,0 +1,39 @@
+{% load static from staticfiles %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="ECharts">
+    <title>ECharts</title>
+    <script type="text/javascript" src="{% static "js/jquery-1.11.3.min.js" %}"></script>
+    <link rel="stylesheet" type="text/css" media="screen" href="{% static "css/bootstrap.min.css" %}" />
+    <script type="text/javascript" src="{% static "js/bootstrap.min.js" %}" charset="UTF-8"></script>
+    <script type="text/javascript" src="{% static "js/option.js" %}"></script>
+
+</head>
+<body>
+    <div id="main" style="width: 1350px; height: 600px;"></div>
+
+    <script type="text/javascript" src="{% static "js/dist/echarts.js" %}"></script>
+    <script type="text/javascript">
+            require.config({
+                paths: {
+                    echarts: '{% static "js/dist" %}'
+                }
+            });
+
+            require(
+                [
+                    'echarts',
+                    'echarts/chart/line',   // 按需加载所需图表，如需动态类型切换功能，别忘了同时加载相应图表
+                    'echarts/chart/bar'
+                ],
+                function (ec) {
+                    var myChart = ec.init(document.getElementById('main'));
+                    myChart.setOption(option);
+                }
+            );
+    </script>
+</body>

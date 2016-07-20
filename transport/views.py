@@ -37,7 +37,8 @@ def region_statistics(request):
     table_arr=load_pickle_from(STATIC_ROOT+os.sep+"WFJBXX_ORG.pkl")
     table_1=table_arr[0]
     data_points=get_point_in_region(table_1,slat,slng,elat,elng)
-    return success_response(str(len(data_points)))
+    addr=str(reverse('transport:echarts'))
+    return success_response(addr)
 @require_POST
 def label_the_road(request):
     point_list_str=request.POST['point_list']
@@ -53,3 +54,5 @@ def label_the_road(request):
 def showpath(request):
     noise_invisible=int(request.GET.get("noise_invisible",0))
     return render(request, 'transport/diffcolor.html',locals())
+def echarts(request):
+    return render(request, 'transport/echarts.html',locals())
