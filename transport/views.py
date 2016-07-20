@@ -86,6 +86,7 @@ def get_points_in_region(table_arr,slat,slng,elat,elng):
                         day_info['data'][hour]['posNum'] += 1
                     else:
                         day_info['data'][hour]['negNum'] += 1
+            day_list = sorted(day_list,key=itemgetter('day'))
             points_info_dict['type'+str(i+1)]= day_list
 
         except Exception as e:
