@@ -23,7 +23,10 @@
                     echarts: '{% static "js/dist" %}'
                 }
             });
-
+            var helianthus;
+            require(['{% static "theme/helianthus" %}'], function(theme) {
+            helianthus = theme;
+            });
             require(
                 [
                     'echarts',
@@ -31,7 +34,7 @@
                     'echarts/chart/bar'
                 ],
                 function (ec) {
-                    var myChart = ec.init(document.getElementById('main'));
+                    var myChart = ec.init(document.getElementById('main'), helianthus);
                     myChart.setOption(option);
                 }
             );

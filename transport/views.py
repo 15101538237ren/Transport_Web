@@ -53,6 +53,15 @@ def label_the_road(request):
     return HttpResponseRedirect(reverse('transport:index'))
 def showpath(request):
     noise_invisible=int(request.GET.get("noise_invisible",0))
+
+    file_names=os.listdir(BASE_DIR+os.sep+"static"+os.sep+"theme")
+    theme_names=[]
+    static_theme_url=[]
+    for filename in file_names:
+        theme_name=filename.split(".")[0]
+        static_theme_url.append('/static/theme/'+theme_name)
+        theme_names.append(theme_name)
+    selected_index=5
     return render(request, 'transport/diffcolor.html',locals())
 def echarts(request):
     return render(request, 'transport/echarts.html',locals())
