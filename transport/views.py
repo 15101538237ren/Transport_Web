@@ -36,6 +36,7 @@ def region_statistics(request):
     elng=float(request.GET.get("elng"))
     print(u"左上经纬度：" + str(slat) + u"," + str(slng) + u", 右下经纬度:" + str(elat) + u"," + str(elng))
     table_arr=load_pickle_from(STATIC_ROOT + os.sep + 'labeledpoints.pkl')
+
     data_points_json=get_points_in_region(table_arr,slat,slng,elat,elng)
     return success_response(data_points_json)
 
@@ -56,6 +57,7 @@ def get_points_in_region(table_arr,slat,slng,elat,elng):
             data_list = []
             date_index = {}
             date_num=0
+            print "hahaha " +str(max_index-min_index+1)
             for j in range(min_index,max_index+1):
                 date = table[j][2]  #这是date的tuple
                 '''date_hour = datetime.datetime(*tuple(table[j][2])[:4])
