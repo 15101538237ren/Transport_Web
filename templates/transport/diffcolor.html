@@ -184,7 +184,7 @@
                 cancelButton: '否',
                 closeIcon: true,
                 confirm: function () {
-                    var addr = "/transport/region_statistics?" + "slat=" + sw.lng + "&slng=" + sw.lat + "&elat=" + ne.lng + "&elng=" + ne.lat;
+                    var addr = "/transport/region_statistics?" + "slng=" + sw.lng + "&slat=" + sw.lat + "&elng=" + ne.lng + "&elat=" + ne.lat;
                     $.get(addr, function (result) {
                         if (result.code == 0) {
                             //alert("区域内有" + result.message + "个点!哈哈");

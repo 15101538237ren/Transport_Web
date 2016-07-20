@@ -1,0 +1,188 @@
+System check identified some issues:
+
+WARNINGS:
+?: (1_8.W001) The standalone TEMPLATE_* settings were deprecated in Django 1.8 and the TEMPLATES dictionary takes precedence. You must put the values of the following settings into your default TEMPLATES dict: TEMPLATE_DEBUG.
+
+System check identified 1 issue (0 silenced).
+/usr/lib/python2.7/importlib/__init__.py:37: RemovedInDjango110Warning: django.core.context_processors is deprecated in favor of django.template.context_processors.
+  __import__(name)
+
+[19/Jul/2016 11:40:47] "GET /transport/showpath?noise_invisible=1 HTTP/1.1" 200 8152
+[19/Jul/2016 11:40:47] "GET /static/output/pathpoints.js HTTP/1.1" 304 0
+Not Found: /favicon.ico
+[19/Jul/2016 11:40:47] "GET /favicon.ico HTTP/1.1" 404 2067
+[19/Jul/2016 11:40:53] "GET /transport/showpath?noise_invisible=1 HTTP/1.1" 200 8152
+[19/Jul/2016 11:40:58] "GET /transport/ HTTP/1.1" 200 99865
+[19/Jul/2016 11:42:34] "GET /transport/showpath HTTP/1.1" 200 8152
+[19/Jul/2016 11:42:34] "GET /static/css/jquery-confirm.min.css HTTP/1.1" 200 7788
+[19/Jul/2016 11:42:34] "GET /static/js/jquery-confirm.min.js HTTP/1.1" 200 8147
+[19/Jul/2016 11:42:34] "GET /static/js/jquery-1.11.3.min.js HTTP/1.1" 200 95957
+[19/Jul/2016 11:42:34] "GET /static/js/bootstrap.min.js HTTP/1.1" 200 36816
+[19/Jul/2016 11:42:37] "GET /static/css/bootstrap.min.css HTTP/1.1" 200 122540
+[19/Jul/2016 11:42:37] "GET /static/output/pathpoints.js HTTP/1.1" 200 375830
+Not Found: /favicon.ico
+[19/Jul/2016 11:42:50] "GET /favicon.ico HTTP/1.1" 404 2067
+[19/Jul/2016 11:44:00] "GET /static/js/jquery-confirm.min.js HTTP/1.1" 200 8147
+[19/Jul/2016 11:44:00] "GET /static/js/bootstrap.min.js HTTP/1.1" 200 36816
+[19/Jul/2016 11:44:00] "GET /static/js/jquery-1.11.3.min.js HTTP/1.1" 200 95957
+[19/Jul/2016 11:44:02] "GET /static/output/pathpoints.js HTTP/1.1" 200 375830
+[19/Jul/2016 11:44:38] "GET /transport/showpath?noise_invisible=1 HTTP/1.1" 200 8152
+Not Found: /favicon.ico
+[19/Jul/2016 11:44:40] "GET /favicon.ico HTTP/1.1" 404 2067
+[19/Jul/2016 11:46:18] "GET /transport/ HTTP/1.1" 200 99865
+[19/Jul/2016 11:46:19] "GET /static/js/data.js HTTP/1.1" 200 147757
+Not Found: /favicon.ico
+[19/Jul/2016 11:46:19] "GET /favicon.ico HTTP/1.1" 404 2067
+[19/Jul/2016 12:00:03] "GET /transport/showpath HTTP/1.1" 200 8152
+[19/Jul/2016 12:00:04] "GET /static/css/jquery-confirm.min.css HTTP/1.1" 200 7788
+[19/Jul/2016 12:00:04] "GET /static/js/jquery-confirm.min.js HTTP/1.1" 200 8147
+[19/Jul/2016 12:00:04] "GET /static/js/bootstrap.min.js HTTP/1.1" 200 36816
+[19/Jul/2016 12:00:04] "GET /static/js/jquery-1.11.3.min.js HTTP/1.1" 200 95957
+[19/Jul/2016 12:00:05] "GET /static/css/bootstrap.min.css HTTP/1.1" 200 122540
+[19/Jul/2016 12:00:07] "GET /static/output/pathpoints.js HTTP/1.1" 200 375830
+Not Found: /favicon.ico
+[19/Jul/2016 12:00:12] "GET /favicon.ico HTTP/1.1" 404 2067
+[19/Jul/2016 12:00:37] "GET /transport/showpath?noise_invisible=1 HTTP/1.1" 200 8152
+Not Found: /favicon.ico
+[19/Jul/2016 12:00:39] "GET /favicon.ico HTTP/1.1" 404 2067
+Not Found: /favicon.ico
+[19/Jul/2016 12:00:40] "GET /favicon.ico HTTP/1.1" 404 2067
+Not Found: /favicon.ico
+[19/Jul/2016 12:00:40] "GET /favicon.ico HTTP/1.1" 404 2067
+Not Found: /favicon.ico
+[19/Jul/2016 12:00:40] "GET /favicon.ico HTTP/1.1" 404 2067
+[19/Jul/2016 12:01:16] "GET /transport/ HTTP/1.1" 200 99865
+[19/Jul/2016 12:01:16] "GET /static/js/data.js HTTP/1.1" 200 147757
+Not Found: /favicon.ico
+[19/Jul/2016 12:01:18] "GET /favicon.ico HTTP/1.1" 404 2067
+Not Found: /favicon.ico
+[19/Jul/2016 12:01:18] "GET /favicon.ico HTTP/1.1" 404 2067
+[19/Jul/2016 12:26:37] "GET /transport/showpath HTTP/1.1" 200 8152
+[19/Jul/2016 12:26:37] "GET /static/css/jquery-confirm.min.css HTTP/1.1" 200 7788
+[19/Jul/2016 12:26:37] "GET /static/js/jquery-confirm.min.js HTTP/1.1" 200 8147
+[19/Jul/2016 12:26:37] "GET /static/js/bootstrap.min.js HTTP/1.1" 200 36816
+[19/Jul/2016 12:26:38] "GET /static/js/jquery-1.11.3.min.js HTTP/1.1" 200 95957
+[19/Jul/2016 12:26:40] "GET /static/css/bootstrap.min.css HTTP/1.1" 200 122540
+[19/Jul/2016 12:26:40] "GET /static/output/pathpoints.js HTTP/1.1" 200 375830
+Not Found: /favicon.ico
+[19/Jul/2016 12:26:42] "GET /favicon.ico HTTP/1.1" 404 2067
+[19/Jul/2016 12:27:43] "GET /transport/showpath HTTP/1.1" 200 8152
+[19/Jul/2016 12:27:43] "GET /static/output/pathpoints.js HTTP/1.1" 304 0
+[19/Jul/2016 12:27:43] "GET /static/js/jquery-1.11.3.min.js HTTP/1.1" 304 0
+[19/Jul/2016 12:27:43] "GET /static/css/jquery-confirm.min.css HTTP/1.1" 304 0
+[19/Jul/2016 12:27:43] "GET /static/css/bootstrap.min.css HTTP/1.1" 304 0
+[19/Jul/2016 12:27:43] "GET /static/js/bootstrap.min.js HTTP/1.1" 304 0
+[19/Jul/2016 12:27:43] "GET /static/js/jquery-confirm.min.js HTTP/1.1" 304 0
+[19/Jul/2016 12:28:34] "GET /transport/showpath HTTP/1.1" 200 8152
+[19/Jul/2016 12:28:34] "GET /static/css/jquery-confirm.min.css HTTP/1.1" 304 0
+[19/Jul/2016 12:28:34] "GET /static/js/jquery-1.11.3.min.js HTTP/1.1" 304 0
+[19/Jul/2016 12:28:34] "GET /static/js/jquery-confirm.min.js HTTP/1.1" 304 0
+[19/Jul/2016 12:28:34] "GET /static/css/bootstrap.min.css HTTP/1.1" 304 0
+[19/Jul/2016 12:28:34] "GET /static/js/bootstrap.min.js HTTP/1.1" 304 0
+[19/Jul/2016 12:28:34] "GET /static/output/pathpoints.js HTTP/1.1" 304 0
+[19/Jul/2016 12:29:31] "GET /transport/showpath?noise_invisible=1 HTTP/1.1" 200 8152
+[19/Jul/2016 12:29:43] "GET /transport/ HTTP/1.1" 200 99865
+[19/Jul/2016 12:29:44] "GET /static/js/data.js HTTP/1.1" 200 147757
+[19/Jul/2016 12:30:43] "GET /static/js/bootstrap.min.js HTTP/1.1" 304 0
+[19/Jul/2016 12:30:43] "GET /static/js/jquery-confirm.min.js HTTP/1.1" 304 0
+[19/Jul/2016 12:30:43] "GET /static/css/bootstrap.min.css HTTP/1.1" 304 0
+[19/Jul/2016 12:30:43] "GET /static/css/jquery-confirm.min.css HTTP/1.1" 304 0
+[19/Jul/2016 12:30:43] "GET /static/js/data.js HTTP/1.1" 304 0
+[19/Jul/2016 12:30:43] "GET /static/js/jquery-1.11.3.min.js HTTP/1.1" 304 0
+[19/Jul/2016 12:30:43] "GET /transport/ HTTP/1.1" 200 99865
+[19/Jul/2016 12:34:29] "GET /transport HTTP/1.1" 301 0
+[19/Jul/2016 12:34:29] "GET /transport/ HTTP/1.1" 200 99865
+[19/Jul/2016 12:34:37] "GET /transport HTTP/1.1" 301 0
+[19/Jul/2016 12:34:37] "GET /transport/ HTTP/1.1" 200 99865
+[19/Jul/2016 12:39:36] "GET /transport/showpath HTTP/1.1" 200 8152
+[19/Jul/2016 12:39:36] "GET /static/css/jquery-confirm.min.css HTTP/1.1" 200 7788
+[19/Jul/2016 12:39:36] "GET /static/js/jquery-confirm.min.js HTTP/1.1" 200 8147
+[19/Jul/2016 12:39:36] "GET /static/js/jquery-1.11.3.min.js HTTP/1.1" 200 95957
+[19/Jul/2016 12:39:36] "GET /static/js/bootstrap.min.js HTTP/1.1" 200 36816
+[19/Jul/2016 12:39:39] "GET /static/output/pathpoints.js HTTP/1.1" 200 375830
+[19/Jul/2016 12:39:39] "GET /static/css/bootstrap.min.css HTTP/1.1" 200 122540
+Not Found: /favicon.ico
+[19/Jul/2016 12:39:41] "GET /favicon.ico HTTP/1.1" 404 2067
+[19/Jul/2016 12:39:59] "GET /transport/showpath?noise_invisible=1 HTTP/1.1" 200 8152
+[19/Jul/2016 12:40:15] "GET /static/js/jquery-confirm.min.js HTTP/1.1" 200 8147
+[19/Jul/2016 12:40:15] "GET /static/js/bootstrap.min.js HTTP/1.1" 200 36816
+[19/Jul/2016 12:40:15] "GET /static/js/jquery-1.11.3.min.js HTTP/1.1" 200 95957
+[19/Jul/2016 12:40:16] "GET /static/js/data.js HTTP/1.1" 200 147757
+[19/Jul/2016 12:40:26] "GET /transport/showpath?noise_invisible=1 HTTP/1.1" 200 8152
+[19/Jul/2016 12:41:58] "GET /transport HTTP/1.1" 301 0
+[19/Jul/2016 12:41:58] "GET /transport/ HTTP/1.1" 200 99865
+[19/Jul/2016 12:41:59] "GET /static/js/data.js HTTP/1.1" 200 147757
+[19/Jul/2016 12:42:13] "GET /transport/ HTTP/1.1" 200 99865
+Not Found: /
+[19/Jul/2016 18:41:37] "GET / HTTP/1.1" 404 2026
+Traceback (most recent call last):
+  File "/usr/lib/python2.7/SocketServer.py", line 593, in process_request_thread
+    self.finish_request(request, client_address)
+  File "/usr/lib/python2.7/SocketServer.py", line 334, in finish_request
+    self.RequestHandlerClass(request, client_address, self)
+  File "/usr/local/lib/python2.7/dist-packages/django/core/servers/basehttp.py", line 99, in __init__
+    super(WSGIRequestHandler, self).__init__(*args, **kwargs)
+  File "/usr/lib/python2.7/SocketServer.py", line 649, in __init__
+    self.handle()
+  File "/usr/local/lib/python2.7/dist-packages/django/core/servers/basehttp.py", line 164, in handle
+    self.raw_requestline = self.rfile.readline(65537)
+  File "/usr/lib/python2.7/socket.py", line 476, in readline
+    data = self._sock.recv(self._rbufsize)
+error: [Errno 104] Connection reset by peer
+Not Found: /
+[19/Jul/2016 20:56:26] "GET / HTTP/1.0" 404 2033
+Not Found: /
+[19/Jul/2016 21:01:15] "GET / HTTP/1.1" 404 2026
+Not Found: /
+[19/Jul/2016 21:01:15] "GET / HTTP/1.1" 404 2026
+Not Found: /
+[19/Jul/2016 21:01:15] "GET / HTTP/1.1" 404 2026
+Not Found: /
+[19/Jul/2016 21:31:27] "GET / HTTP/1.1" 404 2026
+Not Found: /
+[19/Jul/2016 21:31:27] "GET / HTTP/1.1" 404 2026
+Not Found: /
+[19/Jul/2016 21:31:27] "GET / HTTP/1.1" 404 2026
+Not Found: /http:/www.baidu.com/cache/global/img/gs.gif
+[20/Jul/2016 00:13:22] "GET http://www.baidu.com/cache/global/img/gs.gif HTTP/1.1" 404 1729
+Not Found: /
+[20/Jul/2016 00:30:53] "GET / HTTP/1.1" 404 2026
+Not Found: /favicon.ico
+[20/Jul/2016 02:44:54] "GET /favicon.ico HTTP/1.1" 404 2067
+Traceback (most recent call last):
+  File "/usr/lib/python2.7/SocketServer.py", line 593, in process_request_thread
+    self.finish_request(request, client_address)
+  File "/usr/lib/python2.7/SocketServer.py", line 334, in finish_request
+    self.RequestHandlerClass(request, client_address, self)
+  File "/usr/local/lib/python2.7/dist-packages/django/core/servers/basehttp.py", line 99, in __init__
+    super(WSGIRequestHandler, self).__init__(*args, **kwargs)
+  File "/usr/lib/python2.7/SocketServer.py", line 649, in __init__
+    self.handle()
+  File "/usr/local/lib/python2.7/dist-packages/django/core/servers/basehttp.py", line 164, in handle
+    self.raw_requestline = self.rfile.readline(65537)
+  File "/usr/lib/python2.7/socket.py", line 476, in readline
+    data = self._sock.recv(self._rbufsize)
+error: [Errno 104] Connection reset by peer
+Not Found: /
+[20/Jul/2016 05:26:25] "GET / HTTP/1.0" 404 2033
+Performing system checks...
+
+
+You have unapplied migrations; your app may not work properly until they are applied.
+Run 'python manage.py migrate' to apply them.
+July 19, 2016 - 11:40:41
+Django version 1.9.8, using settings 'Transport_Web.settings'
+Starting development server at http://0.0.0.0:8000/
+Quit the server with CONTROL-C.
+----------------------------------------
+Exception happened during processing of request from ('61.151.186.141', 55460)
+----------------------------------------
+----------------------------------------
+Exception happened during processing of request from ('61.151.186.141', 39063)
+----------------------------------------
+System check identified some issues:
+
+WARNINGS:
+?: (1_8.W001) The standalone TEMPLATE_* settings were deprecated in Django 1.8 and the TEMPLATES dictionary takes precedence. You must put the values of the following settings into your default TEMPLATES dict: TEMPLATE_DEBUG.
+
+System check identified 1 issue (0 silenced).
