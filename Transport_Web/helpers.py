@@ -37,6 +37,34 @@ def data_read_and_store(excel_path,pickle_path):
     out_pickle.close()
 
 
+def data_time_read_and_store(excel_path,pickle_path):
+    out_pickle = open(pickle_path, 'wb')
+    data = xlrd.open_workbook(excel_path)
+    table_arr=[]
+
+    for i in range(len(data.sheets())):
+        sheet_data=[]
+        table = data.sheets()[i]  #获取第一个sheet
+        nrows = table.nrows #表示当前excel表格的行数
+        ncols = table.ncols #表示当前excel表格的列数
+        #print(nrows)
+        #print(type(table.row(1)[4].value))
+        for i in range(1,nrows):
+            try:
+                str_lat=table.row(i)[4].value
+                str_lon=table.row(i)[3].value
+                date = xlrd.xldate.xldate_as_datetime(table.row(i)[5].value, 0)
+                if str_lat!="" and str_lon!="":
+                    lat=float(str_lat.encode("utf-8"))
+                    lon=float(str_lon.encode("utf-8"))
+                    sheet_data.append([lat,lon,date])
+            except Exception as e:
+                print(e)
+        table_arr.append(sheet_data)
+    pickle.dump(table_arr,out_pickle,-1)
+    out_pickle.close()
+
+
 #读取道路的Json格式的文件
 def road_read_and_store(road_dir,pickle_path):
     out_pickle = open(pickle_path, 'wb')
@@ -242,7 +270,9 @@ def poly_line_js(roads_set,roads_directions):
 if __name__ == '__main__':
     excel_path=STATIC_ROOT+os.sep+"WFJBXX_ORG.xls"
     out_pickle_path=STATIC_ROOT+os.sep+"WFJBXX_ORG.pkl"
-    data_read_and_store(excel_path,out_pickle_path)
+    #data_read_and_store(excel_path,out_pickle_path)
+    data_time_read_and_store(excel_path,out_pickle_path)
+
     #
     # excel_exception_path = STATIC_ROOT+os.sep+"exception.xlsx"
     # out_exception_pickle_path = STATIC_ROOT + os.sep + "Exception.pkl"
