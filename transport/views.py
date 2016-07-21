@@ -23,92 +23,77 @@ def region(request):
     slng=float(request.GET.get("slng"))
     elat=float(request.GET.get("elat"))
     elng=float(request.GET.get("elng"))
-    #print(u"左上经纬度：" + str(slat) + u"," + str(slng) + u", 右下经纬度:" + str(elat) + u"," + str(elng))
+    #print(u"左上经纬度：" + str(slng) + u"," + str(slat) + u", 右下经纬度:" + str(elng) + u"," + str(elat))
 
     table_arr=load_pickle_from(STATIC_ROOT+os.sep+"WFJBXX_ORG.pkl")
     table_1=table_arr[0]
-    data_points=get_point_in_region(table_1,slat,slng,elat,elng)
+    data_points=get_points_in_region(table_1,slat,slng,elat,elng)
     return success_response(str(len(data_points)))
+
 def region_statistics(request):
     slat=float(request.GET.get("slat"))
     slng=float(request.GET.get("slng"))
     elat=float(request.GET.get("elat"))
     elng=float(request.GET.get("elng"))
-    #print(u"左上经纬度：" + str(slat) + u"," + str(slng) + u", 右下经纬度:" + str(elat) + u"," + str(elng))
+    #print(u"左上经纬度：" + str(slng) + u"," + str(slat) + u", 右下经纬度:" + str(elng) + u"," + str(elat))
     table_arr=load_pickle_from(STATIC_ROOT + os.sep + 'labeledpoints.pkl')
 
-    data_points_json=get_points_in_region(table_arr,slat,slng,elat,elng)
+    points_info_dict = {}
+    for i in range(len(table_arr)):
+        data_list = get_points_in_region(table_arr[i],slat,slng,elat,elng,2)
+        points_info_dict['type' + str(i + 1)] = data_list
+
+    data_points_json = json.dumps(points_info_dict, sort_keys=True, indent=4)
     return success_response(data_points_json)
 
-def get_points_in_region(table_arr,slat,slng,elat,elng):
-    points_info_dict = {}
-    length = len(table_arr)
-    table_date = table_arr[0][0][date_time_index]
-    date_hour_min = datetime.datetime(*tuple(table_date)[0:4])
-    date_hour_max = datetime.datetime(*tuple(table_date)[0:4])
 
-    for i in range(length):
-        try:
-            table = sorted(table_arr[i],key=itemgetter(0))  #得到一种违章类型的list,线按照纬度排序，然后按照经度排序,再按照时间排序
-            min_lng_index = lower_bound_search(table,0,len(table),slng,0)
-            max_lng_index = upper_bound_search(table,0,len(table),elng,0)-1
-            sub_table = sorted(table[min_lng_index:max_lng_index+1],key=itemgetter(1))
-            min_index = lower_bound_search(sub_table,0,len(sub_table),elat,1)
-            max_index = upper_bound_search(sub_table,0,len(sub_table),slat,1)-1
-            data_list = []
-            date_index = {}
-            date_num=0
-            for j in range(min_index,max_index+1):
-            #for j in range(len(table)):
-                #if(slng <=table[j][0] and table[j][0]<= elng and elat <= table[j][1] and table[j][1] <slat):
-                date = table[j][2]  #这是date的tuple
-                '''date_hour = datetime.datetime(*tuple(table[j][2])[:4])
-                if(date_hour<date_hour_min):
-                    date_hour_min = date_hour
-                if(date_hour>date_hour_max):
-                    date_hour_max = date_hour'''
+#获取在矩形区域内的所有数据点
+#通过max_index来选择需要返回哪些数据
+def get_points_in_region(table,slat,slng,elat,elng,MAX_INDEX):
 
-                str_day = str(date[0]) + str(date[1]) +str(date[2])+str(date[3])  #将日期存成字符串
+    table = sorted(table,key=itemgetter(LNG_INDEX))  #得到一种违章类型的list,先按照经度排序
+    min_lng_index = lower_bound_search(table,0,len(table),slng,LNG_INDEX)
+    max_lng_index = upper_bound_search(table,0,len(table),elng,LNG_INDEX)-1  #upper_bound函数求出来的是小于这个数字的最大数
+    sub_table = sorted(table[min_lng_index:max_lng_index+1],key=itemgetter(LAT_INDEX))  #将在经度范围内的数据再次按照纬度重新排序
 
-                day_index = date_index.get(str_day,-1)
-                if(day_index == -1): #表示data_index里面没有这个字段
-                    date_index[str_day] = date_num;
-                    day_info = {'datatime':table[j][2][:4],'posNum':0,'negNum':0}
-                    if(table[j][3]==1):
-                        day_info['posNum'] += 1
-                    else:
-                        day_info['negNum'] += 1
-                    data_list.append(day_info)
-                    date_num += 1
-                else:
-                    day_info = data_list[day_index]
-                    if (table[j][3] == 1):
-                        day_info['posNum'] += 1
-                    else:
-                        day_info['negNum'] += 1
-            data_list = sorted(data_list,key=itemgetter('datatime'))
-            points_info_dict['type'+str(i+1)]= data_list
+    min_final_index = lower_bound_search(sub_table,0,len(sub_table),elat,LAT_INDEX)
+    max_final_index = upper_bound_search(sub_table,0,len(sub_table),slat,LAT_INDEX)-1
 
-        except Exception as e:
-            print(e)
-    '''date_list = []
-    d_minus = date_hour_max - date_hour_min
+    data_list,date_index,date_num = [],{},0
 
-    hours = int((d_minus.days * 24 * 60 * 60 + d_minus.seconds) / 3600.0)
-    time_min = date_hour_min.time()
-    t_h = time_min.hour
-    date_min = date_hour_min.date()
-    date_time_min = datetime.datetime(date_min.year, date_min.month, date_min.day, t_h, 0, 0)
-    for hour in range(hours+1):
-        datetmp = date_time_min + datetime.timedelta(hours=hour)
-        date_list.append([datetmp.year,datetmp.month,datetmp.day,datetmp.hour,datetmp.minute,datetmp.second])
-    points_info_dict['date_list'] = date_list'''
+    for i in range(min_final_index,max_final_index+1):
 
-    jsonstr = json.dumps(points_info_dict,sort_keys=True,indent=4)
-    print(jsonstr)
-    return jsonstr
+        if(MAX_INDEX >= DATE_TIME_INDEX):
+            date = table[i][DATE_TIME_INDEX]  # 这是date的tuple
+            #date这个tuple中date[0]表示年，date[1]表示月，date[2]表示日，date[3]表示小时
+            str_day = str(date[0]) + str(date[1]) +str(date[2])+str(date[3])  #将日期存成字符串
+            day_index = date_index.get(str_day,-1)
+            if(day_index == -1): #表示data_index里面没有这个字段
+                date_index[str_day] = date_num;
+                #获取时间数据只到小时级别
+                day_info = {'datatime':table[i][DATE_TIME_INDEX][:4],'posNum':0,'negNum':0}
+                if(table[i][DIRECTION_INDEX]==1):
+                    day_info['posNum'] += 1
+                elif(table[i][DIRECTION_INDEX]==-1):
+                    day_info['negNum'] += 1
+                data_list.append(day_info)
+                date_num += 1
+            else:
+                day_info = data_list[day_index]
+                if (table[i][DIRECTION_INDEX] == 1):
+                    day_info['posNum'] += 1
+                elif(table[i][DIRECTION_INDEX] == -1):
+                    day_info['negNum'] += 1
+        elif(MAX_INDEX == LAT_INDEX):
+            data_list.append([table[i][LNG_INDEX],table[i][LAT_INDEX]])
 
-#type用来区分经度还是纬度，0表示纬度，1表示经度
+    if (MAX_INDEX >= DATE_TIME_INDEX):
+        data_list = sorted(data_list,key=itemgetter('datatime'))
+
+    return data_list
+
+
+#type用来区分经度还是纬度，0表示经度，1表示纬度
 def lower_bound_search(table,l,r,num,type):
     while(l<r):
         mid = l+(r-l)//2
@@ -121,7 +106,7 @@ def lower_bound_search(table,l,r,num,type):
 def upper_bound_search(table,l,r,num,type):
     while(l<r):
         mid=l+(r-l)//2
-        if(table[mid][type] < num):
+        if(table[mid][type] <= num):
             l=mid+1
         else:
             r=mid

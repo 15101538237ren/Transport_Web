@@ -8,16 +8,22 @@ MAXINT = 999999999
 EPS = 0.000001
 ERROR_EPS = 0.00008
 
+
+#表示原始Excel中相应属性的索引
 EXCEL_LNG_INDEX =  4
 EXCEL_LAT_INDEX = 3
 EXCEL_DATE_INDEX = 5
 
+#表示data/input/road下的所有道路的json文件中道路边界点的经纬度的索引
 ROAD_DATA_LNG_INDEX = 0
 ROAD_DATA_LAT_INDEX = 1
 
+
+#保存的数据相应字段的索引，文件包括pkl和js
 LNG_INDEX = 0
 LAT_INDEX = 1
 DATE_TIME_INDEX = 2
+DIRECTION_INDEX = 3
 
 ROAD_DIR=BASE_DIR+ os.sep+'data'+ os.sep + 'input' + os.sep +'road'
 POINT_OUTPUT_DIR = BASE_DIR+ os.sep+'data'+ os.sep + 'output'
@@ -90,72 +96,58 @@ def load_pickle_from(pickle_path=STATIC_ROOT+os.sep+'WFJBXX_ORG.pkl'):
     return table_arr
 
 
-def get_point_in_region(data_list,slat,slng,elat,elng):
-    point_list_ret=[]
-    minX,maxX,minY,maxY = MAXINT,0,MAXINT,0
-    for lat_lng in data_list:
-        now_lng=lat_lng[0]
-        now_lat=lat_lng[1]
-        if now_lat >= elat and now_lat <= slat and now_lng >= slng and now_lng <=elng:
-            minX = min(minX,now_lng)
-            maxX = max(maxX,now_lng)
-            minY = min(minY,now_lat)
-            maxY = max(maxY,now_lat)
-            point_list_ret.append(lat_lng)
-    #print "%d points in region!" % len(point_list_ret)
-    #print("%d points in region!" % len(point_list_ret))
-    return str(len(point_list_ret))
-
 #检查一个点是否在道路的多边形区域内
 #如果在多边形内，返回值为1
 #如果在多边形外，但是离多边形的某条边很近(在误差允许范围内)，返回值为2
 #如果在多边形外，而且离多边形很远，返回值为0
+
+
 def check_point(dataset,lng,lat):
     flag,minDis,x0,y0,count,length,j = 0,MAXINT,MAXINT,lat,0,len(dataset),len(dataset)-1
     for i in range(0,length):
         #数据点正好和多边形路段边界点重合
-        if (math.fabs(dataset[i][0]-lng) < EPS and math.fabs(dataset[i][1]-lat) < EPS):
+        if (math.fabs(dataset[i][LNG_INDEX]-lng) < EPS and math.fabs(dataset[i][lat_index]-lat) < EPS):
             flag = 1
             break
         #下面计算射线与线段的交点个数，判断点是否在多边形内
         #经度相同时，相当于线段竖直
-        if (math.fabs(dataset[i][0] - dataset[j][0]) < EPS):
-            minY = min(dataset[i][1], dataset[j][1])
-            maxY = max(dataset[i][1], dataset[j][1])
+        if (math.fabs(dataset[i][LNG_INDEX] - dataset[j][LNG_INDEX]) < EPS):
+            minY = min(dataset[i][LAT_INDEX], dataset[j][LAT_INDEX])
+            maxY = max(dataset[i][LAT_INDEX], dataset[j][LAT_INDEX])
             if (minY <= lat and lat <= maxY):
-                dis = math.fabs(lng - dataset[i][0])
+                dis = math.fabs(lng - dataset[i][LNG_INDEX])
                 minDis = min(minDis, dis)
-                if(dataset[i][0]>=lng):  #保证射线是向右的，所以这里求交点的时候，交点不能在数据点左侧
+                if(dataset[i][LNG_INDEX]>=lng):  #保证射线是向右的，所以这里求交点的时候，交点不能在数据点左侧
                     count +=1
         else:
             #线段平行
-            if(math.fabs(dataset[i][1]-dataset[j][1])<EPS):
-                minX = min(dataset[i][0], dataset[j][0])
-                maxX = max(dataset[i][0], dataset[j][0])
+            if(math.fabs(dataset[i][LAT_INDEX]-dataset[j][LAT_INDEX])<EPS):
+                minX = min(dataset[i][LNG_INDEX], dataset[j][LNG_INDEX])
+                maxX = max(dataset[i][LNG_INDEX], dataset[j][LNG_INDEX])
                 if (minX <= lng and lng <= maxX):
-                    dis = math.fabs(lat - dataset[i][1])
+                    dis = math.fabs(lat - dataset[i][LAT_INDEX])
                     minDis = min(minDis, dis)
                     continue
             else:
-                kij = (dataset[j][1] - dataset[i][1]) / (dataset[j][0] - dataset[i][0])
+                kij = (dataset[j][LAT_INDEX] - dataset[i][LAT_INDEX]) / (dataset[j][LNG_INDEX] - dataset[i][LNG_INDEX])
                 #yij = k(x - xi) + yi与y = lat相交求点引出的射线与多边形边的交点
                 #k不会为0
 
                 #求点到直线的距离
                 # yij= kij*(x-dataset[i][0])+dataset[i][1]
                 # ypj=-1/kij*(x-lng)+lat
-                x0 = (kij * dataset[i][0] - dataset[i][1] + lng / kij + lat) / (kij + 1 / kij)
+                x0 = (kij * dataset[i][LNG_INDEX] - dataset[i][LAT_INDEX] + lng / kij + lat) / (kij + 1 / kij)
                 y0 = -1 / kij * (x0 - lng) + lat
-                xPos = (lat - dataset[i][1]) / kij + dataset[i][0]
-                minX = min(dataset[i][0], dataset[j][0])
-                maxX = max(dataset[i][0], dataset[j][0])
-                minY = min(dataset[i][1], dataset[j][1])
-                maxY = max(dataset[i][1], dataset[j][1])
+                xPos = (lat - dataset[i][LAT_INDEX]) / kij + dataset[i][LNG_INDEX]
+                minX = min(dataset[i][LNG_INDEX], dataset[j][LNG_INDEX])
+                maxX = max(dataset[i][LNG_INDEX], dataset[j][LNG_INDEX])
+                minY = min(dataset[i][LAT_INDEX], dataset[j][LAT_INDEX])
+                maxY = max(dataset[i][LAT_INDEX], dataset[j][LAT_INDEX])
                 if (minX <= x0 and x0 <= maxX and minY <= y0 and y0 <= maxY):
                     # 向量a = (lng-xj, lat-yj)
                     # 向量b = (xi-xj, yi-yj)
-                    cross = (lng - dataset[j][0]) * (dataset[i][1] - dataset[j][1]) - (dataset[i][0] - dataset[j][0]) * (lat - dataset[j][1])
-                    dis = math.fabs(cross / math.sqrt(math.pow(dataset[i][0] - dataset[j][0], 2) + math.pow(dataset[i][1] - dataset[j][1], 2)))
+                    cross = (lng - dataset[j][LNG_INDEX]) * (dataset[i][LAT_INDEX] - dataset[j][LAT_INDEX]) - (dataset[i][LNG_INDEX] - dataset[j][LNG_INDEX]) * (lat - dataset[j][LAT_INDEX])
+                    dis = math.fabs(cross / math.sqrt(math.pow(dataset[i][LNG_INDEX] - dataset[j][LNG_INDEX], 2) + math.pow(dataset[i][LAT_INDEX] - dataset[j][LAT_INDEX], 2)))
                     minDis = min(minDis, dis)
 
                 if (max(minX, lng) <= xPos and xPos <= maxX and minY <= lat and lat <= maxY):
@@ -181,6 +173,7 @@ def label_points(data_path,road_path,out_data_path,type,out_newjsdata_path = POI
     labeldatafile = open(out_data_path, 'wb')
     jsdatafile = open(out_newjsdata_path,'w')
     pathpoints,pathpoints_js = [],[]
+
     dataset = pickle.load(datafile)  # 获取所有数据点的list
     roadset = pickle.load(roadfile)  # 获取到所有road的list
     for i in range(len(dataset)):  #遍历excel数据中的len(dataset)个sheet
@@ -189,28 +182,33 @@ def label_points(data_path,road_path,out_data_path,type,out_newjsdata_path = POI
             flag,minDis,pos = 0,MAXINT,0
             #pos用来记录与这个点离的最近的道路的index
             for j in range(len(roadset)):  # 遍历roadset中的每一条道路
-                if (not (roadset[j]['minX'] <= point[0] and point[0] <= roadset[j]['maxX'] and roadset[j]['minY'] <=
-                    point[1] and point[1] <= roadset[j]['maxY'])):
+                if (not (roadset[j]['minX'] <= point[LNG_INDEX] and point[LNG_INDEX] <= roadset[j]['maxX'] and
+                    roadset[j]['minY'] <=point[LAT_INDEX] and point[LAT_INDEX] <= roadset[j]['maxY'])):
                     continue
-                [status,dis] = check_point(roadset[j]['data'],point[0],point[1])
+
+                [status,dis] = check_point(roadset[j]['data'],point[LNG_INDEX],point[LAT_INDEX])
+                point_info = [point[LNG_INDEX],point[LAT_INDEX],point[DATE_TIME_INDEX],roadset[j]['direction']]
                 if(status==1):
                     flag = 1
-                    typepoints.append([point[0],point[1],point[2],roadset[j]['direction']])
+                    #如果找到这个点属于某个多边形，则提前break跳出循环
+                    typepoints.append(point_info)
                     if(type==0):
-                        pathpoints_js.append([point[0], point[1], point[2], roadset[j]['direction']])
+                        pathpoints_js.append(point_info)
                     break
                 elif(status==2):
                     if(dis<minDis):
                         flag,pos,minDis = 2,j,min(minDis,dis)
-
+            point_info = [point[LNG_INDEX], point[LAT_INDEX], point[DATE_TIME_INDEX]]
             if(flag==0):
-                typepoints.append([point[0], point[1], point[2],0])
+                point_info.append(0)
+                typepoints.append(point_info)
                 if(type==0):
-                    pathpoints_js.append([point[0], point[1], point[2], 0])
+                    pathpoints_js.append(point_info)
             elif(flag==2):
-                typepoints.append([point[0], point[1], point[2], roadset[pos]['direction']])
+                point_info.append(roadset[pos]['direction'])
+                typepoints.append(point_info)
                 if(type==0):
-                    pathpoints_js.append([point[0], point[1], point[2], roadset[pos]['direction']])
+                    pathpoints_js.append(point_info)
         pathpoints.append(typepoints)
     pickle.dump(pathpoints, labeldatafile, -1)
     if(type==0):
@@ -238,6 +236,7 @@ def convert_point_list_to_path_file(point_lists,direction):
     json_str=json_str+(","+split).join(points_str_list)+split
     json_str=json_str+'],'+split+'"total": '+str(len(point_lists))+','+split+'"rt_loc_cnt": '+str(len(point_lists))+','+split+'"errorno": 0,'+split+'"direction":'+str(direction)+','+split+'"nearestTime": "'+now_str+'",'+split+'"userTime": "'+now_str+'"'+'\n}'
     return json_str
+
 def get_all_paths(from_dir_path=ROAD_DIR):
     roads_set = []
     roads_directions=[]
@@ -249,6 +248,8 @@ def get_all_paths(from_dir_path=ROAD_DIR):
             roads_set.append(roaddata["data"])
             roads_directions.append(roaddata["direction"])
     return roads_set,roads_directions
+
+
 def poly_line_js(roads_set,roads_directions):
     roads_set_str=json.dumps(roads_set)
     road_directions_str=json.dumps(roads_directions)
