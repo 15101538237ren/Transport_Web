@@ -2,15 +2,32 @@
 import os,xlrd,json,pickle,math,sys,datetime,pytz
 from django.http import HttpResponse, JsonResponse
 from Transport_Web.settings import BASE_DIR,STATIC_ROOT
+
+
 MAXINT = 999999999
 EPS = 0.000001
 ERROR_EPS = 0.00008
+
+EXCEL_LNG_INDEX =  4
+EXCEL_LAT_INDEX = 3
+EXCEL_DATE_INDEX = 5
+
+ROAD_DATA_LNG_INDEX = 0
+ROAD_DATA_LAT_INDEX = 1
+
+LNG_INDEX = 0
+LAT_INDEX = 1
+DATE_TIME_INDEX = 2
+
 ROAD_DIR=BASE_DIR+ os.sep+'data'+ os.sep + 'input' + os.sep +'road'
 POINT_OUTPUT_DIR = BASE_DIR+ os.sep+'data'+ os.sep + 'output'
 
 def success_response(response=None):
     return JsonResponse({"code": 0, "message": response})
-def data_read_and_store(excel_path,pickle_path):
+
+#从Excel中读取数据
+#date_option表示是否读取日期，date_option=1表示读取日期，date_option=0表示不读取
+def data_read_and_store(excel_path,pickle_path,date_option = 0):
     out_pickle = open(pickle_path, 'wb')
     data = xlrd.open_workbook(excel_path)
     table_arr=[]
@@ -19,51 +36,26 @@ def data_read_and_store(excel_path,pickle_path):
         sheet_data=[]
         table = data.sheets()[i]  #获取第一个sheet
         nrows = table.nrows #表示当前excel表格的行数
-        ncols = table.ncols #表示当前excel表格的列数
-        #print(nrows)
-        #print(type(table.row(1)[4].value))
+        #ncols = table.ncols #表示当前excel表格的列数
         for i in range(1,nrows):
             try:
-                str_lat=table.row(i)[4].value
-                str_lon=table.row(i)[3].value
-                if str_lat!="" and str_lon!="":
+                str_lng = table.row(i)[EXCEL_LNG_INDEX].value
+                str_lat = table.row(i)[EXCEL_LAT_INDEX].value
+                date = 0
+                if(date_option == 1):
+                    date = xlrd.xldate_as_tuple(table.row(i)[EXCEL_DATE_INDEX].value, 0)
+                if str_lat!="" and str_lng!="":
                     lat=float(str_lat.encode("utf-8"))
-                    lon=float(str_lon.encode("utf-8"))
-                    sheet_data.append([lat,lon])
+                    lng=float(str_lng.encode("utf-8"))
+                    if(date_option ==1):
+                        sheet_data.append([lng,lat,date])
+                    else:
+                        sheet_data.append([lng,lat])
             except Exception as e:
                 print(e)
         table_arr.append(sheet_data)
     pickle.dump(table_arr,out_pickle,-1)
     out_pickle.close()
-
-
-def data_time_read_and_store(excel_path,pickle_path):
-    out_pickle = open(pickle_path, 'wb')
-    data = xlrd.open_workbook(excel_path)
-    table_arr=[]
-
-    for i in range(len(data.sheets())):
-        sheet_data=[]
-        table = data.sheets()[i]  #获取第一个sheet
-        nrows = table.nrows #表示当前excel表格的行数
-        ncols = table.ncols #表示当前excel表格的列数
-        #print(nrows)
-        #print(type(table.row(1)[4].value))
-        for i in range(1,nrows):
-            try:
-                str_lat=table.row(i)[4].value
-                str_lon=table.row(i)[3].value
-                date = xlrd.xldate_as_tuple(table.row(i)[5].value, 0)
-                if str_lat!="" and str_lon!="":
-                    lat=float(str_lat.encode("utf-8"))
-                    lon=float(str_lon.encode("utf-8"))
-                    sheet_data.append([lat,lon,date])
-            except Exception as e:
-                print(e)
-        table_arr.append(sheet_data)
-    pickle.dump(table_arr,out_pickle,-1)
-    out_pickle.close()
-
 
 #读取道路的Json格式的文件
 def road_read_and_store(road_dir,pickle_path):
@@ -75,9 +67,12 @@ def road_read_and_store(road_dir,pickle_path):
             text = roadfile.read()
             roaddata = json.loads(text)  #获取到道路的数据集
             minX,maxX,minY,maxY = MAXINT,0,MAXINT,0
+            #给道路的json文件中添加道路最小x,最小y,最大x,最大y的值
             for road in roaddata['data']:
-                minX,maxX,minY,maxY=min(minX,road[0]),max(maxX,road[0]),min(minY,road[1]),max(maxY,road[1])
-            roaddata['minX'],roaddata['maxX'],roaddata['minY'],roaddata['maxY'] = minX,maxX,minY,maxY
+                minX,maxX = min(minX,road[ROAD_DATA_LNG_INDEX]),max(maxX,road[ROAD_DATA_LNG_INDEX])
+                minY, maxY= min(minY,road[ROAD_DATA_LAT_INDEX]),max(maxY,road[ROAD_DATA_LAT_INDEX])
+            roaddata['minX'],roaddata['maxX'] = minX,maxX
+            roaddata['minY'],roaddata['maxY'] = minY,maxY
             roadfile = open(road_dir + os.sep + filename, 'w')
             jsondata = json.dumps(roaddata,sort_keys=True,indent=4)
             roadfile.write(jsondata)
@@ -290,7 +285,7 @@ if __name__ == '__main__':
     excel_path=STATIC_ROOT+os.sep+"WFJBXX_ORG.xls"
     out_pickle_path=STATIC_ROOT+os.sep+"WFJBXX_ORG.pkl"
     data_read_and_store(excel_path,out_pickle_path)
-    data_time_read_and_store(excel_path,out_pickle_path)
+    data_read_and_store(excel_path,out_pickle_path,1)
     data_file=open(out_pickle_path,"rb")
     dataset = pickle.load(data_file)  # 获取所有数据点的list
     data_file.close()

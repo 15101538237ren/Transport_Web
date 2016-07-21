@@ -43,7 +43,7 @@ def region_statistics(request):
 def get_points_in_region(table_arr,slat,slng,elat,elng):
     points_info_dict = {}
     length = len(table_arr)
-    table_date = table_arr[0][0][2]
+    table_date = table_arr[0][0][date_time_index]
     date_hour_min = datetime.datetime(*tuple(table_date)[0:4])
     date_hour_max = datetime.datetime(*tuple(table_date)[0:4])
 
@@ -140,6 +140,8 @@ def label_the_road(request):
     road_file=open(ROAD_DIR+os.sep+now_str,"w")
     road_file.write(road_json)
     return HttpResponseRedirect(reverse('transport:index'))
+
+
 def showpath(request):
     noise_invisible=int(request.GET.get("noise_invisible",0))
 
