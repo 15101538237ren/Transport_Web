@@ -1,0 +1,153 @@
+{% load static from staticfiles %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=EmulateIE9" />
+    <title>{% block title %}{% endblock %}</title>
+    <style type="text/css">
+        html,body{
+            margin:0;
+            width:100%;
+            height:100%;
+            background:#ffffff;
+        }
+        #map{
+            width:100%;
+            height:95%;
+        }
+        #navi{
+            width:100%;
+            height:5%;
+        }
+        #panel {
+            position: absolute;
+            top:30px;
+            left:10px;
+            z-index: 999;
+            color: #fff;
+        }
+        #login{
+            position:absolute;
+            width:300px;
+            height:40px;
+            left:50%;
+            top:50%;
+            margin:-40px 0 0 -150px;
+        }
+        #login input[type=password]{
+            width:200px;
+            height:30px;
+            padding:3px;
+            line-height:30px;
+            border:1px solid #000;
+        }
+        #login input[type=submit]{
+            width:80px;
+            height:38px;
+            display:inline-block;
+            line-height:38px;
+        }
+    </style>
+    <!-- 写点样式，让轮播好看点 -->
+    <style>
+    ul, ol { padding: 0;}
+    .banner { position: relative; overflow: auto; text-align: center;}
+    .banner li { list-style: none; }
+    .banner ul li { float: left; }
+    #b04 { width: 640px;}
+    #b04 .dots { position: absolute; left: 0; right: 0; bottom: 20px;}
+    #b04 .dots li
+    {
+        display: inline-block;
+        width: 10px;
+        height: 10px;
+        margin: 0 4px;
+        text-indent: -999em;
+        border: 2px solid #fff;
+        border-radius: 6px;
+        cursor: pointer;
+        opacity: .4;
+        -webkit-transition: background .5s, opacity .5s;
+        -moz-transition: background .5s, opacity .5s;
+        transition: background .5s, opacity .5s;
+    }
+    #b04 .dots li.active
+    {
+        background: #fff;
+        opacity: 1;
+    }
+    #b04 .arrow { position: absolute; top: 200px;}
+    #b04 #al { left: 15px;}
+    #b04 #ar { right: 15px;}
+    </style>
+    <script type="text/javascript" src="http://api.map.baidu.com/api?v=2.0&ak=eM0GfCwd27kZRyM49ZOkvkOaidDXz6Wf"></script>
+    <script type="text/javascript" src="http://api.map.baidu.com/library/DrawingManager/1.4/src/DrawingManager_min.js"></script>
+    <link rel="stylesheet" href="http://api.map.baidu.com/library/DrawingManager/1.4/src/DrawingManager_min.css" />
+    <script type="text/javascript" src="{% static "js/jquery-1.11.3.min.js" %}"></script>
+    <link rel="stylesheet" type="text/css" media="screen" href="{% static "css/bootstrap.min.css" %}" />
+    <script type="text/javascript" src="{% static "js/bootstrap.min.js" %}" charset="UTF-8"></script>
+    <link rel="stylesheet" type="text/css" media="screen" href="{% static "css/jquery-confirm.min.css" %}" />
+    <script type="text/javascript" src="{% static "js/jquery-confirm.min.js" %}" charset="UTF-8"></script>
+    <script type="text/javascript" src="{% static "js/unslider.min.js" %}"></script>
+    <script>
+
+    function show_banner()
+    {
+        var unslider04 = $('#b04').unslider({
+            speed:500,
+            delay:3000,
+            dots: true
+        }),
+        data04 = unslider04.data('unslider');
+
+        $('.unslider-arrow04').click(function() {
+            var fn = this.className.split(' ')[1];
+            data04[fn]();
+        });
+    }
+    </script>
+    {% block head %}{% endblock %}
+</head>
+
+<body>
+    {% block navigator %}
+        <nav class="navbar navbar-default" style="margin-bottom:0" id ="navi">
+          <div class="container-fluid">
+            <!-- Brand and toggle get grouped for better mobile display -->
+            <div class="navbar-header">
+              <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+              </button>
+              <a class="navbar-brand" href="{% url 'transport:index' %}">北京交通可视化系统</a>
+            </div>
+
+            <!-- Collect the nav links, forms, and other content for toggling -->
+            <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+              <ul class="nav navbar-nav">
+                <li ><a href="{% url 'transport:index' %}">道路标注</a></li>
+                <li class="dropdown">
+                  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">点标注结果 <span class="caret"></span></a>
+                  <ul class="dropdown-menu">
+                    <li><a href="{% url 'transport:showpath' %}">所有点</a></li>
+                    <li><a href="{% url 'transport:showpath' %}?noise_invisible=1&data_type=0">所有点(仅标注点)</a></li>
+                    <li role="separator" class="divider"></li>
+                    <li><a href="{% url 'transport:showpath' %}?noise_invisible=1&data_type=1">应急车道点标注</a></li>
+                    <li><a href="{% url 'transport:showpath' %}?noise_invisible=1&data_type=2">违反指示标线点标注</a></li>
+                    <li><a href="{% url 'transport:showpath' %}?noise_invisible=1&data_type=3">非机动车道点标注</a></li>
+                    <li><a href="{% url 'transport:showpath' %}?noise_invisible=1&data_type=4">公交车道点标注</a></li>
+                  </ul>
+                </li>
+              </ul>
+            </div><!-- /.navbar-collapse -->
+          </div><!-- /.container-fluid -->
+        </nav>
+    {% endblock %}
+    {% block content %}
+    {% endblock %}
+</body>
+</html>

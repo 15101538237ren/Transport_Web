@@ -23,7 +23,7 @@ def region(request):
     slng=float(request.GET.get("slng"))
     elat=float(request.GET.get("elat"))
     elng=float(request.GET.get("elng"))
-    print(u"左上经纬度：" + str(slat) + u"," + str(slng) + u", 右下经纬度:" + str(elat) + u"," + str(elng))
+    #print(u"左上经纬度：" + str(slat) + u"," + str(slng) + u", 右下经纬度:" + str(elat) + u"," + str(elng))
 
     table_arr=load_pickle_from(STATIC_ROOT+os.sep+"WFJBXX_ORG.pkl")
     table_1=table_arr[0]
@@ -34,7 +34,7 @@ def region_statistics(request):
     slng=float(request.GET.get("slng"))
     elat=float(request.GET.get("elat"))
     elng=float(request.GET.get("elng"))
-    print(u"左上经纬度：" + str(slat) + u"," + str(slng) + u", 右下经纬度:" + str(elat) + u"," + str(elng))
+    #print(u"左上经纬度：" + str(slat) + u"," + str(slng) + u", 右下经纬度:" + str(elat) + u"," + str(elng))
     table_arr=load_pickle_from(STATIC_ROOT + os.sep + 'labeledpoints.pkl')
 
     data_points_json=get_points_in_region(table_arr,slat,slng,elat,elng)
