@@ -78,7 +78,7 @@
 <body>
 <div id="map"></div>
 <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" >
-  <div class="modal-dialog" role="document" style="width:1200px;height: 600px;">
+  <div class="modal-dialog" role="document" style="width:1400px;height: 600px;">
     <div class="modal-content">
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
@@ -97,7 +97,7 @@
           </select>
         </div>
       </div>
-      <div class="modal-body" id="main" style="width:1200px;height: 600px;">
+      <div class="modal-body" id="main" style="width:1400px;height: 600px;">
 
       </div>
       <div class="modal-footer">
@@ -105,7 +105,85 @@
     </div>
   </div>
 </div>
+<script type="text/javascript" src="{% static "js/dist/echarts.js" %}"></script>
 <script type="text/javascript">
+            var myChart;
+            var echarts;
+            var domMain=document.getElementById('main');
+            require.config({
+                paths: {
+                    echarts: '{% static "js/dist" %}'
+                }
+            });
+            var themes_index_dic = {};
+            var themes_dic=[];
+            var theme_names={{ theme_names | safe }};
+            var static_theme_url={{ static_theme_url |safe }};
+            len=static_theme_url.length;
+            for(var icont = 0; icont < len; icont++){
+                i_num=icont;
+                //alert(i_num);
+                url=static_theme_url[i_num];
+
+                theme_name=theme_names[i_num].toString();
+                require([url], function(theme) {
+                    themes_dic.push(theme);
+                }
+                );
+                themes_index_dic[theme_name]=i_num;
+            }
+
+
+            var curTheme=themes_dic[themes_index_dic["helianthus"]];
+            require(
+                [
+                    'echarts',
+                    'echarts/chart/line',   // 按需加载所需图表，如需动态类型切换功能，别忘了同时加载相应图表
+                    'echarts/chart/bar'
+                ],
+                function (ec) {
+                    echarts=ec;
+                    myChart = ec.init(domMain,curTheme);
+                    myChart.setOption(option);
+                }
+            );
+            var themeSelector = $('#theme-select');
+            $(themeSelector).on('change', function(){
+                selectChange($(this).val());
+            });
+            function selectChange(value){
+                curTheme = value;
+                myChart.showLoading();
+                $(themeSelector).val(curTheme);
+                if (curTheme != 'default') {
+                    window.location.hash = value;
+                    require(['/static/theme/' + curTheme], function(tarTheme){
+                        curTheme = tarTheme;
+                        setTimeout(refreshTheme, 500);
+                    })
+                }
+                else {
+                    window.location.hash ='';
+                    curTheme = {};
+                    setTimeout(refreshTheme, 500);
+                }
+            }
+            function refreshTheme(){
+                myChart.hideLoading();
+                myChart.setTheme(curTheme);
+            }
+            function refresh_data(option_new){
+            if (myChart && myChart.dispose) {
+                myChart.dispose();
+            }
+            myChart = echarts.init(domMain, curTheme);
+            window.onresize = myChart.resize;
+            myChart.setOption(option_new, true);
+            }
+</script>
+<script type="text/javascript">
+
+
 
     var map = new BMap.Map("map", {});                        // 创建Map实例
     map.centerAndZoom(new BMap.Point(116.404, 39.915), 12);     // 初始化地图,设置中心点坐标和地图级别
@@ -271,82 +349,7 @@
     }
 
 </script>
-<script type="text/javascript" src="{% static "js/dist/echarts.js" %}"></script>
-<script type="text/javascript">
-            var myChart;
-            var echarts;
-            var domMain=document.getElementById('main');
-            require.config({
-                paths: {
-                    echarts: '{% static "js/dist" %}'
-                }
-            });
-            var themes_index_dic = {};
-            var themes_dic=[];
-            var theme_names={{ theme_names | safe }};
-            var static_theme_url={{ static_theme_url |safe }};
-            len=static_theme_url.length;
-            for(var icont = 0; icont < len; icont++){
-                i_num=icont;
-                //alert(i_num);
-                url=static_theme_url[i_num];
 
-                theme_name=theme_names[i_num].toString();
-                require([url], function(theme) {
-                    themes_dic.push(theme);
-                }
-                );
-                themes_index_dic[theme_name]=i_num;
-            }
-
-
-            var curTheme=themes_dic[themes_index_dic["helianthus"]];
-            require(
-                [
-                    'echarts',
-                    'echarts/chart/line',   // 按需加载所需图表，如需动态类型切换功能，别忘了同时加载相应图表
-                    'echarts/chart/bar'
-                ],
-                function (ec) {
-                    echarts=ec;
-                    myChart = ec.init(domMain,curTheme);
-                    myChart.setOption(option);
-                }
-            );
-            var themeSelector = $('#theme-select');
-            $(themeSelector).on('change', function(){
-                selectChange($(this).val());
-            });
-            function selectChange(value){
-                curTheme = value;
-                myChart.showLoading();
-                $(themeSelector).val(curTheme);
-                if (curTheme != 'default') {
-                    window.location.hash = value;
-                    require(['/static/theme/' + curTheme], function(tarTheme){
-                        curTheme = tarTheme;
-                        setTimeout(refreshTheme, 500);
-                    })
-                }
-                else {
-                    window.location.hash ='';
-                    curTheme = {};
-                    setTimeout(refreshTheme, 500);
-                }
-            }
-            function refreshTheme(){
-                myChart.hideLoading();
-                myChart.setTheme(curTheme);
-            }
-            function refresh_data(option_new){
-                if (myChart && myChart.dispose) {
-                    myChart.dispose();
-                }
-                myChart = echarts.init(domMain, curTheme);
-                window.onresize = myChart.resize;
-                myChart.setOption(option_new, true);
-            }
-</script>
 </body>
 </html>
 
