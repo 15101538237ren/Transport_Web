@@ -111,7 +111,7 @@ def get_points_in_region(table_arr,slat,slng,elat,elng):
 #type用来区分经度还是纬度，0表示纬度，1表示经度
 def lower_bound_search(table,l,r,num,type):
     while(l<r):
-        mid = l+(r-l)/2
+        mid = l+(r-l)//2
         if(table[mid][type] >= num):
             r=mid
         else:
@@ -120,7 +120,7 @@ def lower_bound_search(table,l,r,num,type):
 
 def upper_bound_search(table,l,r,num,type):
     while(l<r):
-        mid=l+(r-l)/2
+        mid=l+(r-l)//2
         if(table[mid][type] < num):
             l=mid+1
         else:
