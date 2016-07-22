@@ -215,6 +215,67 @@
 
     var overlays = [];
 	var overlaycomplete = function(e){
+        if (e.drawingMode=="polyline")//如果是画多边形结束后
+        {
+            var line_points = e.overlay.ia;
+            poly_start_point=line_points[0];
+            poly_end_point=line_points[line_points.length-1];
+            distance_of_st=distance(poly_start_point,poly_end_point);
+            threshold=0.00022;
+            if (distance_of_st <= threshold)
+            {
+
+                now_overlay= e.overlay;
+
+                $.confirm({
+                confirmButtonClass: 'btn-info',
+                cancelButtonClass: 'btn-danger',
+
+                keyboardEnabled: true,
+                title: '信息',
+                content: '是否选择当前区域中的数据点?',
+                confirmButton: '是',
+                cancelButton: '否',
+                closeIcon: true,
+                confirm: function () {
+                    var point_list_json_str=JSON.stringify(line_points);
+                    var addr = "/transport/polyline_statistics?" + "point_list="+point_list_json_str;
+                    $.get(addr, function (result) {
+                        if (result.code == 0) {
+                            handle_result_from_json(result);
+                            map.removeOverlay(e.overlay);
+                        }
+                        else {
+                            alert(result.message);
+                            map.removeOverlay(e.overlay);
+                        }
+                    });
+                },
+                cancel: function () {
+                    map.removeOverlay(e.overlay);
+                }
+            });
+            }
+            else {
+                $.confirm({
+                confirmButtonClass: 'btn-info',
+                cancelButtonClass: 'btn-default',
+
+                keyboardEnabled: true,
+                title: '警告',
+                content: '选择的区域起点和终点应相同,请重新绘制!',
+                confirmButton: '确定',
+                cancelButton: '取消',
+                closeIcon: true,
+                confirm: function () {
+                    map.removeOverlay(e.overlay);
+                },
+                cancel: function () {
+                    map.removeOverlay(e.overlay);
+                }
+            });
+            }
+        }
         if (e.drawingMode=="rectangle") {//画矩形结束
             var olRectPoint = e.overlay.ro;
             /* *.Nk是从 e 的dom节点中寻找到的，百度本身没有提供此方法的介绍。
@@ -243,40 +304,12 @@
                     var addr = "/transport/region_statistics?" + "slng=" + sw.lng + "&slat=" + sw.lat + "&elng=" + ne.lng + "&elat=" + ne.lat;
                     $.get(addr, function (result) {
                         if (result.code == 0) {
-                            rtn_json=JSON.parse(result.message);
-                            type_data_list=[rtn_json.type1,rtn_json.type2,rtn_json.type3,rtn_json.type4];
-                            for(var i = 0; i < 2*type_data_list.length; i++){
-                                option.series[i].data=(function () {
-                                                    var d = [];
-                                                    var idx=i % 4;
-                                                    var data_now=type_data_list[idx];
-                                                    var len_data_now=data_now.length;
-                                                    for(var j = 0; j < len_data_now; j++){
-                                                        var object_now=data_now[j];
-                                                        var date_object=object_now.datatime;
-                                                        var value_data=-1;
-                                                        if (i < 4)
-                                                        {
-                                                            value_data=object_now.negNum;
-                                                        }
-                                                        else {
-                                                            value_data=object_now.posNum;
-                                                        }
-                                                        var date_of_data=new Date(date_object[0], date_object[1]-1, date_object[2], date_object[3], 0 , 0);
-                                                        d.push([
-                                                            date_of_data,
-                                                            value_data
-                                                        ]);
-                                                    }
-                                                    return d;
-                                                })()
-                            }
-                            $('#myModal').modal('show');
-                            var option_now=option;
-                            refresh_data(option_now);
+                            handle_result_from_json(result);
+                            map.removeOverlay(e.overlay);
                         }
                         else {
                             alert(result.message);
+                            map.removeOverlay(e.overlay);
                         }
                     });
                 },
@@ -314,6 +347,40 @@
             map.removeOverlay(overlays[i]);
         }
         overlays.length = 0
+    }
+    function handle_result_from_json(result)
+    {
+        rtn_json=JSON.parse(result.message);
+        type_data_list=[rtn_json.type1,rtn_json.type2,rtn_json.type3,rtn_json.type4];
+        for(var i = 0; i < 2*type_data_list.length; i++){
+            option.series[i].data=(function () {
+                                var d = [];
+                                var idx=i % 4;
+                                var data_now=type_data_list[idx];
+                                var len_data_now=data_now.length;
+                                for(var j = 0; j < len_data_now; j++){
+                                    var object_now=data_now[j];
+                                    var date_object=object_now.datatime;
+                                    var value_data=-1;
+                                    if (i < 4)
+                                    {
+                                        value_data=object_now.negNum;
+                                    }
+                                    else {
+                                        value_data=object_now.posNum;
+                                    }
+                                    var date_of_data=new Date(date_object[0], date_object[1]-1, date_object[2], date_object[3], 0 , 0);
+                                    d.push([
+                                        date_of_data,
+                                        value_data
+                                    ]);
+                                }
+                                return d;
+                            })()
+        }
+        $('#myModal').modal('show');
+        var option_now=option;
+        refresh_data(option_now);
     }
 </script>
 {% endblock %}
