@@ -36,8 +36,10 @@ def region(request):
 def area_statistics(request):
 
     area_list_str = request.GET.get('point_list',-2)
-    area_points_list,border_list = [],[]
-    type = IN_POLYGON_AREA
+    data_type = int(request.GET.get('data_type', -1))
+
+    area_points_list, border_list = [], []
+    area_type = IN_POLYGON_AREA
 
     minX, maxX, minY, maxY = MAXINT, 0, MAXINT, 0
 
@@ -47,7 +49,7 @@ def area_statistics(request):
         elat = float(request.GET.get("elat", -1))
         elng = float(request.GET.get("elng", -1))
         area_points_list = [[slng,slat],[slng,elat],[elng,elat],[elng,slat]]
-        type = IN_RECTANGLE_AREA
+        area_type = IN_RECTANGLE_AREA
         minX, maxX, minY, maxY = slng, elng, elat, slat
         border_list = [minX,maxX,minY,maxY]
     else:
@@ -58,15 +60,10 @@ def area_statistics(request):
         border_list = [minX, maxX, minY, maxY]
     table_arr=load_pickle_from(STATIC_ROOT + os.sep + 'labeledpoints.pkl')
 
-    points_info_dict = {}
-    table_arr_length = len(table_arr)
-    points_info_dict['statistic'] = {}
-    for i in range(table_arr_length):
-        [data_list, stat_dict] = get_points_in_region(table_arr[i],area_points_list,border_list,2,type)
-        points_info_dict['type' + str(i + 1)] = data_list
-        points_info_dict['statistic']['type' + str(i + 1)] = stat_dict
 
+    points_info_dict = get_points_in_region(table_arr, area_points_list, border_list, area_type, data_type)
     data_points_json = json.dumps(points_info_dict, sort_keys=True, indent=4)
+    print(data_points_json)
     return success_response(data_points_json)
 
 #判断点是否在矩形边界区域内
@@ -86,20 +83,9 @@ def point_is_in_area(area_points_list, border_list, point,type):
                 return True
         return False
 
-#获取在矩形区域内的所有数据点
-#通过max_index来选择需要返回哪些数据
-#通过type来判断是否在矩形区域内，或多边形区域内，type==0表示矩形，type==1表示多边形
-def get_points_in_region(table,area_points_list,border_list,MAX_INDEX,type):
 
-    #得到一种违章类型的list,之前在helper中处理数据时就已经按照先经度，后纬度的顺序排好序了
-    min_lng_index = lower_bound_search(table, 0, len(table), border_list[0], LNG_INDEX)
-    max_lng_index = upper_bound_search(table, 0, len(table), border_list[1], LNG_INDEX)-1  #upper_bound函数求出来的是小于这个数字的最大数
-    sub_table = sorted(table[min_lng_index:max_lng_index+1],key=itemgetter(LAT_INDEX))  #将在经度范围内的数据再次按照纬度重新排序
-
-    min_final_index = lower_bound_search(sub_table, 0, len(sub_table), border_list[2], LAT_INDEX)
-    max_final_index = upper_bound_search(sub_table, 0, len(sub_table), border_list[3], LAT_INDEX)-1
-
-    data_list,date_index,date_num = [],{},0
+def get_time_data_list(sub_table, min_final_index, max_final_index, area_points_list, border_list, area_type):
+    data_list, date_dict, date_num = [], {}, 0
     '''count = 0
     test_list = []
     for i in range(len(table)):
@@ -112,43 +98,38 @@ def get_points_in_region(table,area_points_list,border_list,MAX_INDEX,type):
     test_list = sorted(test_list,key = itemgetter(LNG_INDEX,LAT_INDEX))
     test2_list = []'''
 
-    posSum, negSum = 0,0
+    posSum, negSum = 0, 0
 
-    for i in range(min_final_index,max_final_index+1):
-        #test2_list.append([sub_table[i][LNG_INDEX],sub_table[i][LAT_INDEX]])
-
-        is_in_area = point_is_in_area(area_points_list, border_list, sub_table[i], type)
-
-        if(not is_in_area):
+    for j in range(min_final_index, max_final_index + 1):
+        # test2_list.append([sub_table[i][LNG_INDEX],sub_table[i][LAT_INDEX]])
+        is_in_area = point_is_in_area(area_points_list, border_list, sub_table[j], area_type)
+        if (not is_in_area):
             continue
-        if(MAX_INDEX >= DATE_TIME_INDEX):
+        date = sub_table[j][DATE_TIME_INDEX]  # 这是date的tuple
+        # date这个tuple中date[0]表示年，date[1]表示月，date[2]表示日，date[3]表示小时
+        str_day = str(date[0]) + str(date[1]) + str(date[2]) + str(date[3])  # 将日期存成字符串
+        day_index = date_dict.get(str_day, -1)
+        if (day_index == -1):  # 表示data_index里面没有这个字段
+            date_dict[str_day] = date_num
+            # 获取时间数据只到小时级别
+            day_info = {'datatime': date[:4], 'posNum': 0, 'negNum': 0}
+            if (sub_table[j][DIRECTION_INDEX] == 1):
+                day_info['posNum'] += 1
+                posSum += 1
+            elif (sub_table[j][DIRECTION_INDEX] == -1):
+                day_info['negNum'] += 1
+                negSum += 1
+            data_list.append(day_info)
+            date_num += 1
+        else:
+            day_info = data_list[day_index]
+            if (sub_table[j][DIRECTION_INDEX] == 1):
+                day_info['posNum'] += 1
+                posSum += 1
+            elif (sub_table[j][DIRECTION_INDEX] == -1):
+                day_info['negNum'] += 1
+                negSum += 1
 
-            date = sub_table[i][DATE_TIME_INDEX]  # 这是date的tuple
-            #date这个tuple中date[0]表示年，date[1]表示月，date[2]表示日，date[3]表示小时
-            str_day = str(date[0]) + str(date[1]) +str(date[2])+str(date[3])  #将日期存成字符串
-            day_index = date_index.get(str_day,-1)
-            if(day_index == -1): #表示data_index里面没有这个字段
-                date_index[str_day] = date_num
-                #获取时间数据只到小时级别
-                day_info = {'datatime':sub_table[i][DATE_TIME_INDEX][:4],'posNum':0,'negNum':0}
-                if(sub_table[i][DIRECTION_INDEX]==1):
-                    day_info['posNum'] += 1
-                    posSum += 1
-                elif(sub_table[i][DIRECTION_INDEX]==-1):
-                    day_info['negNum'] += 1
-                    negSum += 1
-                data_list.append(day_info)
-                date_num += 1
-            else:
-                day_info = data_list[day_index]
-                if (sub_table[i][DIRECTION_INDEX] == 1):
-                    day_info['posNum'] += 1
-                    posSum += 1
-                elif(sub_table[i][DIRECTION_INDEX] == -1):
-                    day_info['negNum'] += 1
-                    negSum += 1
-        elif(MAX_INDEX == LAT_INDEX):
-            data_list.append([sub_table[i][LNG_INDEX],sub_table[i][LAT_INDEX]])
     '''test2_list = sorted(test2_list,key = itemgetter(LNG_INDEX,LAT_INDEX))
     count2 = 0
     for i in range(len(test_list)):
@@ -158,13 +139,104 @@ def get_points_in_region(table,area_points_list,border_list,MAX_INDEX,type):
         print("YES")
     else:
         print("NO")'''
+    data_list = sorted(data_list, key=itemgetter('datatime'))
+    stat_dict = {'pos': {'sum': posSum}, 'neg': {'sum': negSum}}
+    return [data_list,stat_dict]
 
-    if (MAX_INDEX >= DATE_TIME_INDEX):
-        data_list = sorted(data_list,key=itemgetter('datatime'))
 
-    stat_dict = {'pos':{'sum':posSum},'neg':{'sum':negSum}}
+def get_sum_data_list(sub_table, min_final_index, max_final_index, area_points_list, border_list, area_type):
 
-    return data_list, stat_dict
+    data_list, hour_dict, hour_num, date_dict, date_num = [], {}, 0, {}, 0
+    posSum, negSum = 0, 0
+
+
+
+    for j in range(min_final_index, max_final_index + 1):
+        # test2_list.append([sub_table[i][LNG_INDEX],sub_table[i][LAT_INDEX]])
+        is_in_area = point_is_in_area(area_points_list, border_list, sub_table[j], area_type)
+        if (not is_in_area):
+            continue
+        date = sub_table[j][DATE_TIME_INDEX]  # 这是date的tuple
+        # date这个tuple中date[0]表示年，date[1]表示月，date[2]表示日，date[3]表示小时
+        str_day = str(date[0]) + str(date[1]) + str(date[2])  # 将日期存成字符串
+        day_index = date_dict.get(str_day, -1)
+        if (day_index == -1):  # 表示data_index里面没有这个字段
+            date_dict[str_day] = date_num
+            date_num += 1
+
+        str_hour = str(date[3])  # 将日期存成字符串
+        hour_index = hour_dict.get(str_hour, -1)
+
+        if (hour_index == -1):  # 表示data_index里面没有这个字段
+            hour_dict[str_hour] = hour_num
+            # 获取时间数据只到小时级别
+
+            hour_info = {'datatime': (2016,6,1,date[3]), 'posNum': 0, 'negNum': 0}
+            if (sub_table[j][DIRECTION_INDEX] == 1):
+                hour_info['posNum'] += 1
+                posSum += 1
+            elif (sub_table[j][DIRECTION_INDEX] == -1):
+                hour_info['negNum'] += 1
+                negSum += 1
+            data_list.append(hour_info)
+            hour_num += 1
+        else:
+            hour_info = data_list[hour_index]
+            if (sub_table[j][DIRECTION_INDEX] == 1):
+                hour_info['posNum'] += 1
+                posSum += 1
+            elif (sub_table[j][DIRECTION_INDEX] == -1):
+                hour_info['negNum'] += 1
+                negSum += 1
+
+    '''test2_list = sorted(test2_list,key = itemgetter(LNG_INDEX,LAT_INDEX))
+    count2 = 0
+    for i in range(len(test_list)):
+        if(test_list[i][LNG_INDEX] == test2_list[i][LNG_INDEX] and test_list[i][LAT_INDEX] == test2_list[i][LAT_INDEX]):
+            count2 += 1
+    if(count2 == len(test_list)):
+        print("YES")
+    else:
+        print("NO")'''
+    data_list = sorted(data_list, key=itemgetter('datatime'))
+    for data in data_list:
+        data['posNum'] = data['posNum'] / date_num
+        data['negNum'] = data['negNum'] / date_num
+
+    stat_dict = {'pos': {'sum': posSum}, 'neg': {'sum': negSum}}
+    return [data_list, stat_dict]
+
+
+#获取在矩形区域内的所有数据点
+#通过max_index来选择需要返回哪些数据
+#通过area_type来判断是否在矩形区域内，或多边形区域内，area_type==0表示矩形，area_type==1表示多边形
+#通过data_type来返回不同类型的Json格式
+def get_points_in_region(table_arr,area_points_list,border_list,area_type,data_type):
+
+    points_info_dict = {}
+    table_arr_length = len(table_arr)
+    points_info_dict['statistic'] = {}
+    for i in range(table_arr_length):
+        table = table_arr[i]
+        #得到一种违章类型的list,之前在helper中处理数据时就已经按照先经度，后纬度的顺序排好序了
+        min_lng_index = lower_bound_search(table, 0, len(table), border_list[0], LNG_INDEX)
+        max_lng_index = upper_bound_search(table, 0, len(table), border_list[1], LNG_INDEX)-1  #upper_bound函数求出来的是小于这个数字的最大数
+        sub_table = sorted(table[min_lng_index:max_lng_index+1], key=itemgetter(LAT_INDEX))  #将在经度范围内的数据再次按照纬度重新排序
+
+        min_final_index = lower_bound_search(sub_table, 0, len(sub_table), border_list[2], LAT_INDEX)
+        max_final_index = upper_bound_search(sub_table, 0, len(sub_table), border_list[3], LAT_INDEX)-1
+
+        data_list, stat_dict = [], {}
+        if (data_type == 0):
+            pass
+        elif (data_type == 1):
+            [data_list, stat_dict] = get_time_data_list(sub_table, min_final_index, max_final_index, area_points_list, border_list, area_type)
+        elif (data_type == 2):
+            [data_list, stat_dict] = get_sum_data_list(sub_table, min_final_index, max_final_index, area_points_list, border_list, area_type)
+
+        points_info_dict['type' + str(i + 1)] = data_list
+        points_info_dict['statistic']['type' + str(i + 1)] = stat_dict
+    return points_info_dict
 
 
 #type用来区分经度还是纬度，0表示经度，1表示纬度
@@ -185,43 +257,6 @@ def upper_bound_search(table,l,r,num,type):
         else:
             r=mid
     return l
-def polyline_statistics(request):
-
-
-
-    table_arr = load_pickle_from(STATIC_ROOT + os.sep + 'labeledpoints.pkl')
-
-
-
-    points_info_dict = {}
-
-    table_arr_length = len(table_arr)
-    for i in range(table_arr_length):
-        data_list = get_points_in_region(table_arr[i], minX, maxX, minY, maxY, 2, IN_POLYGON_AREA)
-        points_info_dict['type' + str(i + 1)] = data_list
-
-    data_points_json = json.dumps(points_info_dict, sort_keys=True, indent=4)
-
-
-    for i in range(table_arr_length):
-
-        table = table_arr[i]
-
-        min_lng_index = lower_bound_search(table, 0, len(table), minX, LNG_INDEX)
-        max_lng_index = upper_bound_search(table, 0, len(table), maxX, LNG_INDEX) - 1  # upper_bound函数求出来的是小于这个数字的最大数
-        sub_table = sorted(table[min_lng_index:max_lng_index + 1], key=itemgetter(LAT_INDEX))  # 将在经度范围内的数据再次按照纬度重新排序
-
-        min_final_index = lower_bound_search(sub_table, 0, len(sub_table), minY, LAT_INDEX)
-        max_final_index = upper_bound_search(sub_table, 0, len(sub_table), maxY, LAT_INDEX) - 1
-
-        type_list = []
-        subb_table = sub_table[min_final_index: max_final_index + 1]
-        for j in range(min_final_index, max_final_index + 1):
-            point = sub_table[j]
-
-        in_area_points.append(type_list)
-    json_str = json.dumps(in_area_points)
-    return success_response(json_str)
 
 
 

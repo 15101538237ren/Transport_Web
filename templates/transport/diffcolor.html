@@ -180,17 +180,20 @@
             }
         }
         var options1 = {
-            size: BMAP_POINT_SIZE_TINY,
+            //size: BMAP_POINT_SIZE_TINY,
+            size: BMAP_POINT_SIZE_SMALLER,
             //shape: BMAP_POINT_SHAPE_STAR,
             color: '#ff0000'
         };
         var options2 = {
-            size: BMAP_POINT_SIZE_TINY,
+            //size: BMAP_POINT_SIZE_TINY,
+            size: BMAP_POINT_SIZE_SMALLER,
             //shape: BMAP_POINT_SHAPE_STAR,
             color: '#0000ff'
         };
         var options3 = {
-            size: BMAP_POINT_SIZE_TINY,
+            //size: BMAP_POINT_SIZE_TINY,
+            size: BMAP_POINT_SIZE_SMALLER,
             //shape: BMAP_POINT_SHAPE_STAR,
             color: '#000000'
         };
@@ -239,7 +242,7 @@
                 closeIcon: true,
                 confirm: function () {
                     var point_list_json_str=JSON.stringify(line_points);
-                    var addr = "/transport/area_statistics?" + "point_list="+point_list_json_str;
+                    var addr = "/transport/area_statistics?" + "point_list="+point_list_json_str + "&data_type=2";
                     $.get(addr, function (result) {
                         if (result.code == 0) {
                             handle_result_from_json(result);
@@ -301,7 +304,7 @@
                 cancelButton: '否',
                 closeIcon: true,
                 confirm: function () {
-                    var addr = "/transport/area_statistics?" + "slng=" + sw.lng + "&slat=" + sw.lat + "&elng=" + ne.lng + "&elat=" + ne.lat;
+                    var addr = "/transport/area_statistics?" + "slng=" + sw.lng + "&slat=" + sw.lat + "&elng=" + ne.lng + "&elat=" + ne.lat + "&data_type=2";
                     $.get(addr, function (result) {
                         if (result.code == 0) {
                             handle_result_from_json(result);
