@@ -107,6 +107,11 @@
             data04[fn]();
         });
     }
+    function distance(x,y){
+        lat_sqr=Math.pow((x.lat- y.lat),2);
+        lng_sqr=Math.pow((x.lng- y.lng),2);
+        return Math.sqrt(lat_sqr+lng_sqr);
+    }
     </script>
     {% block head %}{% endblock %}
 </head>
