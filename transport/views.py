@@ -126,7 +126,8 @@ def upper_bound_search(table,l,r,num,type):
         else:
             r=mid
     return l
-
+def polyline_statistics(request):
+    point_list_str=request.GET['point_list']
 
 @require_POST
 def label_the_road(request):

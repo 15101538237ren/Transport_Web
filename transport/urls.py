@@ -3,6 +3,7 @@ from django.conf.urls import url
 from transport import views
 
 urlpatterns = [
+    url(r'^polyline_statistics', views.polyline_statistics, name='polyline_statistics'),
     url(r'^region_statistics', views.region_statistics, name='region_statistics'),
     url(r'^region', views.region, name='region'),
     url(r'^echarts', views.echarts, name='echarts'),
