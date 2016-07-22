@@ -76,6 +76,7 @@
 </div>
 <!-- EndModal -->
 <script type="text/javascript">
+
 {#    $("#bannerModal").modal('show');#}
 {#    show_banner();#}
     $("#myModal").modal('hide');
@@ -222,11 +223,7 @@
         overlays.length = 0
     }
     {{ polyline_js_code | safe }}
-    function distance(x,y){
-        lat_sqr=Math.pow((x.lat- y.lat),2);
-        lng_sqr=Math.pow((x.lng- y.lng),2);
-        return Math.sqrt(lat_sqr+lng_sqr);
-    }
+
     function closemodal()
     {
         map.removeOverlay(now_overlay);
