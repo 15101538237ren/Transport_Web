@@ -61,32 +61,52 @@ def get_points_in_region(table,slat,slng,elat,elng,MAX_INDEX):
     max_final_index = upper_bound_search(sub_table,0,len(sub_table),slat,LAT_INDEX)-1
 
     data_list,date_index,date_num = [],{},0
+    '''count = 0
+    test_list = []
+    for i in range(len(table)):
+
+        if(slng <= table[i][LNG_INDEX] and table[i][LNG_INDEX] <= elng and elat <= table[i][LAT_INDEX] and table[i][LAT_INDEX] <= slat):
+            count += 1
+            test_list.append([table[i][LNG_INDEX],table[i][LAT_INDEX]])
+    print(count)
+    print(max_final_index-min_final_index+1)
+    test_list = sorted(test_list,key = itemgetter(LNG_INDEX,LAT_INDEX))
+    test2_list = []'''
 
     for i in range(min_final_index,max_final_index+1):
-
+        #test2_list.append([sub_table[i][LNG_INDEX],sub_table[i][LAT_INDEX]])
         if(MAX_INDEX >= DATE_TIME_INDEX):
-            date = table[i][DATE_TIME_INDEX]  # 这是date的tuple
+            date = sub_table[i][DATE_TIME_INDEX]  # 这是date的tuple
             #date这个tuple中date[0]表示年，date[1]表示月，date[2]表示日，date[3]表示小时
             str_day = str(date[0]) + str(date[1]) +str(date[2])+str(date[3])  #将日期存成字符串
             day_index = date_index.get(str_day,-1)
             if(day_index == -1): #表示data_index里面没有这个字段
-                date_index[str_day] = date_num;
+                date_index[str_day] = date_num
                 #获取时间数据只到小时级别
-                day_info = {'datatime':table[i][DATE_TIME_INDEX][:4],'posNum':0,'negNum':0}
-                if(table[i][DIRECTION_INDEX]==1):
+                day_info = {'datatime':sub_table[i][DATE_TIME_INDEX][:4],'posNum':0,'negNum':0}
+                if(sub_table[i][DIRECTION_INDEX]==1):
                     day_info['posNum'] += 1
-                elif(table[i][DIRECTION_INDEX]==-1):
+                elif(sub_table[i][DIRECTION_INDEX]==-1):
                     day_info['negNum'] += 1
                 data_list.append(day_info)
                 date_num += 1
             else:
                 day_info = data_list[day_index]
-                if (table[i][DIRECTION_INDEX] == 1):
+                if (sub_table[i][DIRECTION_INDEX] == 1):
                     day_info['posNum'] += 1
-                elif(table[i][DIRECTION_INDEX] == -1):
+                elif(sub_table[i][DIRECTION_INDEX] == -1):
                     day_info['negNum'] += 1
         elif(MAX_INDEX == LAT_INDEX):
-            data_list.append([table[i][LNG_INDEX],table[i][LAT_INDEX]])
+            data_list.append([sub_table[i][LNG_INDEX],sub_table[i][LAT_INDEX]])
+    '''test2_list = sorted(test2_list,key = itemgetter(LNG_INDEX,LAT_INDEX))
+    count2 = 0
+    for i in range(len(test_list)):
+        if(test_list[i][LNG_INDEX] == test2_list[i][LNG_INDEX] and test_list[i][LAT_INDEX] == test2_list[i][LAT_INDEX]):
+            count2 += 1
+    if(count2 == len(test_list)):
+        print("YES")
+    else:
+        print("NO")'''
 
     if (MAX_INDEX >= DATE_TIME_INDEX):
         data_list = sorted(data_list,key=itemgetter('datatime'))
@@ -121,9 +141,12 @@ def polyline_statistics(request):
     table_arr_length = len(table_arr)
 
     minX,maxX,minY,maxY = MAXINT,0,MAXINT,0
-    for point in point_list:
-        minX,maxX,minY,maxY = min(minX,point[LNG_INDEX]),max(maxX,point[LNG_INDEX]),min(minY,point[LAT_INDEX]),max(maxY,point[LAT_INDEX])
 
+    polyline_points_list = []
+
+    for point in point_list:
+        minX,maxX,minY,maxY = min(minX,point['lng']),max(maxX,point['lng']),min(minY,point['lat']),max(maxY,point['lat'])
+        polyline_points_list.append([point['lng'],point['lat']])
     in_area_points = []
 
     for i in range(table_arr_length):
@@ -131,19 +154,20 @@ def polyline_statistics(request):
         table = table_arr[i]
 
         min_lng_index = lower_bound_search(table, 0, len(table), minX, LNG_INDEX)
-        max_lng_index = upper_bound_search(table, 0, len(table), minY, LNG_INDEX) - 1  # upper_bound函数求出来的是小于这个数字的最大数
+        max_lng_index = upper_bound_search(table, 0, len(table), maxX, LNG_INDEX) - 1  # upper_bound函数求出来的是小于这个数字的最大数
         sub_table = sorted(table[min_lng_index:max_lng_index + 1], key=itemgetter(LAT_INDEX))  # 将在经度范围内的数据再次按照纬度重新排序
 
         min_final_index = lower_bound_search(sub_table, 0, len(sub_table), minY, LAT_INDEX)
         max_final_index = upper_bound_search(sub_table, 0, len(sub_table), maxY, LAT_INDEX) - 1
 
         type_list = []
-
+        subb_table = sub_table[min_final_index: max_final_index + 1]
         for j in range(min_final_index, max_final_index + 1):
-            point = table[j]
-            [status, dis] = check_point(point_list, point[LNG_INDEX], point[LAT_INDEX])
-            if(status > 0):
-                type_list.append([point[LNG_INDEX],point[LAT_INDEX],point[DIRECTION_INDEX]])
+            point = sub_table[j]
+            if(point[DIRECTION_INDEX] != 0):  #这个数据点必须在道路上才行
+                [status, dis] = check_point(polyline_points_list, point[LNG_INDEX], point[LAT_INDEX])
+                if(status > 0):
+                    type_list.append([point[LNG_INDEX],point[LAT_INDEX],point[DIRECTION_INDEX]])
         in_area_points.append(type_list)
     json_str = json.dumps(in_area_points)
     return success_response(json_str)
