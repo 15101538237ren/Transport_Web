@@ -11,6 +11,9 @@ import pytz
 from operator import itemgetter, attrgetter
 # Create your views here.
 
+IN_RECTANGLE_AREA = 0
+IN_POLYGON_AREA = 1
+
 def index(request):
     roads_set,roads_directions=get_all_paths()
     polyline_js_code=poly_line_js(roads_set,roads_directions)
@@ -30,35 +33,70 @@ def region(request):
     data_points=get_points_in_region(table_1,slat,slng,elat,elng)
     return success_response(str(len(data_points)))
 
-def region_statistics(request):
-    slat=float(request.GET.get("slat"))
-    slng=float(request.GET.get("slng"))
-    elat=float(request.GET.get("elat"))
-    elng=float(request.GET.get("elng"))
-    #print(u"左上经纬度：" + str(slng) + u"," + str(slat) + u", 右下经纬度:" + str(elng) + u"," + str(elat))
+def area_statistics(request):
+
+    area_list_str = request.GET.get('point_list',-2)
+    area_points_list,border_list = [],[]
+    type = IN_POLYGON_AREA
+
+    minX, maxX, minY, maxY = MAXINT, 0, MAXINT, 0
+
+    if(area_list_str == -2):
+        slat = float(request.GET.get("slat", -1))
+        slng = float(request.GET.get("slng", -1))
+        elat = float(request.GET.get("elat", -1))
+        elng = float(request.GET.get("elng", -1))
+        area_points_list = [[slng,slat],[slng,elat],[elng,elat],[elng,slat]]
+        type = IN_RECTANGLE_AREA
+        minX, maxX, minY, maxY = slng, elng, elat, slat
+        border_list = [minX,maxX,minY,maxY]
+    else:
+        area_list = json.loads(area_list_str)
+        for point in area_list:
+            minX, maxX, minY, maxY = min(minX, point['lng']), max(maxX, point['lng']), min(minY, point['lat']), max(maxY, point['lat'])
+            area_points_list.append([point['lng'], point['lat']])
+        border_list = [minX, maxX, minY, maxY]
     table_arr=load_pickle_from(STATIC_ROOT + os.sep + 'labeledpoints.pkl')
 
     points_info_dict = {}
     table_arr_length = len(table_arr)
+
     for i in range(table_arr_length):
-        data_list = get_points_in_region(table_arr[i],slat,slng,elat,elng,2)
+        data_list = get_points_in_region(table_arr[i],area_points_list,border_list,2,type)
         points_info_dict['type' + str(i + 1)] = data_list
 
     data_points_json = json.dumps(points_info_dict, sort_keys=True, indent=4)
     return success_response(data_points_json)
 
+#判断点是否在矩形边界区域内
+def is_in_border(border_list, point):
+    return border_list[0] <= point[LNG_INDEX] and point[LNG_INDEX] <= border_list[1] \
+           and border_list[2] <= point[LAT_INDEX] and point[LAT_INDEX] <= border_list[3]
+
+
+#判断点是否在区域内
+def point_is_in_area(area_points_list, border_list, point,type):
+    if(type == IN_RECTANGLE_AREA):
+        return is_in_border(border_list, point)
+    elif(type == IN_POLYGON_AREA):
+        if (is_in_border(border_list, point) and point[DIRECTION_INDEX] != 0):  # 这个数据点必须在道路上才行
+            [status, dis] = check_point(area_points_list, point[LNG_INDEX], point[LAT_INDEX])
+            if (status > 0):
+                return True
+        return False
 
 #获取在矩形区域内的所有数据点
 #通过max_index来选择需要返回哪些数据
-def get_points_in_region(table,slat,slng,elat,elng,MAX_INDEX):
+#通过type来判断是否在矩形区域内，或多边形区域内，type==0表示矩形，type==1表示多边形
+def get_points_in_region(table,area_points_list,border_list,MAX_INDEX,type):
 
     #得到一种违章类型的list,之前在helper中处理数据时就已经按照先经度，后纬度的顺序排好序了
-    min_lng_index = lower_bound_search(table,0,len(table),slng,LNG_INDEX)
-    max_lng_index = upper_bound_search(table,0,len(table),elng,LNG_INDEX)-1  #upper_bound函数求出来的是小于这个数字的最大数
+    min_lng_index = lower_bound_search(table, 0, len(table), border_list[0], LNG_INDEX)
+    max_lng_index = upper_bound_search(table, 0, len(table), border_list[1], LNG_INDEX)-1  #upper_bound函数求出来的是小于这个数字的最大数
     sub_table = sorted(table[min_lng_index:max_lng_index+1],key=itemgetter(LAT_INDEX))  #将在经度范围内的数据再次按照纬度重新排序
 
-    min_final_index = lower_bound_search(sub_table,0,len(sub_table),elat,LAT_INDEX)
-    max_final_index = upper_bound_search(sub_table,0,len(sub_table),slat,LAT_INDEX)-1
+    min_final_index = lower_bound_search(sub_table, 0, len(sub_table), border_list[2], LAT_INDEX)
+    max_final_index = upper_bound_search(sub_table, 0, len(sub_table), border_list[3], LAT_INDEX)-1
 
     data_list,date_index,date_num = [],{},0
     '''count = 0
@@ -75,7 +113,13 @@ def get_points_in_region(table,slat,slng,elat,elng,MAX_INDEX):
 
     for i in range(min_final_index,max_final_index+1):
         #test2_list.append([sub_table[i][LNG_INDEX],sub_table[i][LAT_INDEX]])
+
+        is_in_area = point_is_in_area(area_points_list, border_list, sub_table[i], type)
+
+        if(not is_in_area):
+            continue
         if(MAX_INDEX >= DATE_TIME_INDEX):
+
             date = sub_table[i][DATE_TIME_INDEX]  # 这是date的tuple
             #date这个tuple中date[0]表示年，date[1]表示月，date[2]表示日，date[3]表示小时
             str_day = str(date[0]) + str(date[1]) +str(date[2])+str(date[3])  #将日期存成字符串
@@ -133,21 +177,22 @@ def upper_bound_search(table,l,r,num,type):
             r=mid
     return l
 def polyline_statistics(request):
-    point_list_str=request.GET['point_list']
-    point_list = json.loads(point_list_str)
+
+
 
     table_arr = load_pickle_from(STATIC_ROOT + os.sep + 'labeledpoints.pkl')
 
+
+
+    points_info_dict = {}
+
     table_arr_length = len(table_arr)
+    for i in range(table_arr_length):
+        data_list = get_points_in_region(table_arr[i], minX, maxX, minY, maxY, 2, IN_POLYGON_AREA)
+        points_info_dict['type' + str(i + 1)] = data_list
 
-    minX,maxX,minY,maxY = MAXINT,0,MAXINT,0
+    data_points_json = json.dumps(points_info_dict, sort_keys=True, indent=4)
 
-    polyline_points_list = []
-
-    for point in point_list:
-        minX,maxX,minY,maxY = min(minX,point['lng']),max(maxX,point['lng']),min(minY,point['lat']),max(maxY,point['lat'])
-        polyline_points_list.append([point['lng'],point['lat']])
-    in_area_points = []
 
     for i in range(table_arr_length):
 
@@ -164,10 +209,7 @@ def polyline_statistics(request):
         subb_table = sub_table[min_final_index: max_final_index + 1]
         for j in range(min_final_index, max_final_index + 1):
             point = sub_table[j]
-            if(point[DIRECTION_INDEX] != 0):  #这个数据点必须在道路上才行
-                [status, dis] = check_point(polyline_points_list, point[LNG_INDEX], point[LAT_INDEX])
-                if(status > 0):
-                    type_list.append([point[LNG_INDEX],point[LAT_INDEX],point[DIRECTION_INDEX]])
+
         in_area_points.append(type_list)
     json_str = json.dumps(in_area_points)
     return success_response(json_str)

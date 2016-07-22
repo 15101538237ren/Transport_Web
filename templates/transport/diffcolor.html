@@ -221,7 +221,7 @@
             poly_start_point=line_points[0];
             poly_end_point=line_points[line_points.length-1];
             distance_of_st=distance(poly_start_point,poly_end_point);
-            threshold=0.00022;
+            threshold=0.0022;
             if (distance_of_st <= threshold)
             {
 
@@ -239,7 +239,7 @@
                 closeIcon: true,
                 confirm: function () {
                     var point_list_json_str=JSON.stringify(line_points);
-                    var addr = "/transport/polyline_statistics?" + "point_list="+point_list_json_str;
+                    var addr = "/transport/area_statistics?" + "point_list="+point_list_json_str;
                     $.get(addr, function (result) {
                         if (result.code == 0) {
                             handle_result_from_json(result);
@@ -301,7 +301,7 @@
                 cancelButton: '否',
                 closeIcon: true,
                 confirm: function () {
-                    var addr = "/transport/region_statistics?" + "slng=" + sw.lng + "&slat=" + sw.lat + "&elng=" + ne.lng + "&elat=" + ne.lat;
+                    var addr = "/transport/area_statistics?" + "slng=" + sw.lng + "&slat=" + sw.lat + "&elng=" + ne.lng + "&elat=" + ne.lat;
                     $.get(addr, function (result) {
                         if (result.code == 0) {
                             handle_result_from_json(result);
