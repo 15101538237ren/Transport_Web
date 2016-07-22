@@ -60,10 +60,11 @@ def area_statistics(request):
 
     points_info_dict = {}
     table_arr_length = len(table_arr)
-
+    points_info_dict['statistic'] = {}
     for i in range(table_arr_length):
-        data_list = get_points_in_region(table_arr[i],area_points_list,border_list,2,type)
+        [data_list, stat_dict] = get_points_in_region(table_arr[i],area_points_list,border_list,2,type)
         points_info_dict['type' + str(i + 1)] = data_list
+        points_info_dict['statistic']['type' + str(i + 1)] = stat_dict
 
     data_points_json = json.dumps(points_info_dict, sort_keys=True, indent=4)
     return success_response(data_points_json)
@@ -111,6 +112,8 @@ def get_points_in_region(table,area_points_list,border_list,MAX_INDEX,type):
     test_list = sorted(test_list,key = itemgetter(LNG_INDEX,LAT_INDEX))
     test2_list = []'''
 
+    posSum, negSum = 0,0
+
     for i in range(min_final_index,max_final_index+1):
         #test2_list.append([sub_table[i][LNG_INDEX],sub_table[i][LAT_INDEX]])
 
@@ -130,16 +133,20 @@ def get_points_in_region(table,area_points_list,border_list,MAX_INDEX,type):
                 day_info = {'datatime':sub_table[i][DATE_TIME_INDEX][:4],'posNum':0,'negNum':0}
                 if(sub_table[i][DIRECTION_INDEX]==1):
                     day_info['posNum'] += 1
+                    posSum += 1
                 elif(sub_table[i][DIRECTION_INDEX]==-1):
                     day_info['negNum'] += 1
+                    negSum += 1
                 data_list.append(day_info)
                 date_num += 1
             else:
                 day_info = data_list[day_index]
                 if (sub_table[i][DIRECTION_INDEX] == 1):
                     day_info['posNum'] += 1
+                    posSum += 1
                 elif(sub_table[i][DIRECTION_INDEX] == -1):
                     day_info['negNum'] += 1
+                    negSum += 1
         elif(MAX_INDEX == LAT_INDEX):
             data_list.append([sub_table[i][LNG_INDEX],sub_table[i][LAT_INDEX]])
     '''test2_list = sorted(test2_list,key = itemgetter(LNG_INDEX,LAT_INDEX))
@@ -155,7 +162,9 @@ def get_points_in_region(table,area_points_list,border_list,MAX_INDEX,type):
     if (MAX_INDEX >= DATE_TIME_INDEX):
         data_list = sorted(data_list,key=itemgetter('datatime'))
 
-    return data_list
+    stat_dict = {'pos':{'sum':posSum},'neg':{'sum':negSum}}
+
+    return data_list, stat_dict
 
 
 #type用来区分经度还是纬度，0表示经度，1表示纬度
