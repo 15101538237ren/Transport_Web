@@ -2,6 +2,7 @@
 import os,xlrd,json,pickle,math,sys,datetime,pytz
 from django.http import HttpResponse, JsonResponse
 from Transport_Web.settings import BASE_DIR,STATIC_ROOT
+from operator import itemgetter, attrgetter
 
 
 MAXINT = 999999999
@@ -33,12 +34,14 @@ def success_response(response=None):
 
 #从Excel中读取数据
 #date_option表示是否读取日期，date_option=1表示读取日期，date_option=0表示不读取
-def data_read_and_store(excel_path,pickle_path,date_option = 0):
+#all_optioin表示是否将所有不同违章类型的点都保存在同一个List中，all_option=1表示将所有点都保存在同一个List中，all_option=0表示将不同类型的点保存在不同的List中
+
+def data_read_and_store(excel_path,pickle_path,date_option = 0,all_option=1):
     out_pickle = open(pickle_path, 'wb')
     data = xlrd.open_workbook(excel_path)
     table_arr=[]
-
-    for i in range(len(data.sheets())):
+    sheet_length = len(data.sheets())
+    for i in range(sheet_length):
         sheet_data=[]
         table = data.sheets()[i]  #获取第一个sheet
         nrows = table.nrows #表示当前excel表格的行数
@@ -54,12 +57,22 @@ def data_read_and_store(excel_path,pickle_path,date_option = 0):
                     lat=float(str_lat.encode("utf-8"))
                     lng=float(str_lng.encode("utf-8"))
                     if(date_option ==1):
-                        sheet_data.append([lng,lat,date])
+                        if(all_option==0):
+                            sheet_data.append([lng,lat,date])
+                        else:
+                            table_arr.append([lng,lat,date])
                     else:
-                        sheet_data.append([lng,lat])
+                        if(all_option==0):
+                            sheet_data.append([lng,lat])
+                        else:
+                            table_arr.append([lng,lat])
             except Exception as e:
                 print(e)
-        table_arr.append(sheet_data)
+        if(all_option==0):
+            sheet_data = sorted(sheet_data,key=itemgetter(LNG_INDEX,LAT_INDEX))  #将数据点先按照经度排序，然后再按照纬度排序
+            table_arr.append(sheet_data)
+    if(all_option==1):
+        table_arr = sorted(table_arr,key=itemgetter(LNG_INDEX,LAT_INDEX)) #将数据点先按照经度排序，然后再按照纬度排序
     pickle.dump(table_arr,out_pickle,-1)
     out_pickle.close()
 
@@ -106,7 +119,7 @@ def check_point(dataset,lng,lat):
     flag,minDis,x0,y0,count,length,j = 0,MAXINT,MAXINT,lat,0,len(dataset),len(dataset)-1
     for i in range(0,length):
         #数据点正好和多边形路段边界点重合
-        if (math.fabs(dataset[i][LNG_INDEX]-lng) < EPS and math.fabs(dataset[i][lat_index]-lat) < EPS):
+        if (math.fabs(dataset[i][LNG_INDEX]-lng) < EPS and math.fabs(dataset[i][LAT_INDEX]-lat) < EPS):
             flag = 1
             break
         #下面计算射线与线段的交点个数，判断点是否在多边形内
@@ -176,12 +189,14 @@ def label_points(data_path,road_path,out_data_path,type,out_newjsdata_path = POI
 
     dataset = pickle.load(datafile)  # 获取所有数据点的list
     roadset = pickle.load(roadfile)  # 获取到所有road的list
-    for i in range(len(dataset)):  #遍历excel数据中的len(dataset)个sheet
+    dataset_length = len(dataset)  #提前计算好List的长度，提高效率
+    for i in range(dataset_length):  #遍历excel数据中的len(dataset)个sheet
         typepoints = []
         for point in dataset[i]:  # 遍历dataset中的每一个数据点
             flag,minDis,pos = 0,MAXINT,0
             #pos用来记录与这个点离的最近的道路的index
-            for j in range(len(roadset)):  # 遍历roadset中的每一条道路
+            roadset_length = len(roadset)   #提前计算好List的长度，提高效率
+            for j in range(roadset_length):  # 遍历roadset中的每一条道路
                 if (not (roadset[j]['minX'] <= point[LNG_INDEX] and point[LNG_INDEX] <= roadset[j]['maxX'] and
                     roadset[j]['minY'] <=point[LAT_INDEX] and point[LAT_INDEX] <= roadset[j]['maxY'])):
                     continue
@@ -209,9 +224,12 @@ def label_points(data_path,road_path,out_data_path,type,out_newjsdata_path = POI
                 typepoints.append(point_info)
                 if(type==0):
                     pathpoints_js.append(point_info)
+        typepoints = sorted(typepoints, key = itemgetter(LNG_INDEX,LAT_INDEX))
         pathpoints.append(typepoints)
     pickle.dump(pathpoints, labeldatafile, -1)
+
     if(type==0):
+        pathpoints_js = sorted(pathpoints_js, key = itemgetter(LNG_INDEX,LAT_INDEX))  #提前按照先经度，后纬度的顺序排序，便于后续处理
         pathpoints_str = json.dumps(pathpoints_js)
     else:
         pathpoints_str = json.dumps(pathpoints)
@@ -285,8 +303,10 @@ if __name__ == '__main__':
 
     excel_path=STATIC_ROOT+os.sep+"WFJBXX_ORG.xls"
     out_pickle_path=STATIC_ROOT+os.sep+"WFJBXX_ORG.pkl"
-    data_read_and_store(excel_path,out_pickle_path)
-    data_read_and_store(excel_path,out_pickle_path,1)
+    out_pickle_path_all = STATIC_ROOT+os.sep+"WFJBXX_ORG_ALL.pkl"
+    #data_read_and_store(excel_path,out_pickle_path)
+    data_read_and_store(excel_path,out_pickle_path,1,0)
+    data_read_and_store(excel_path, out_pickle_path_all, 1, 1)
     data_file=open(out_pickle_path,"rb")
     dataset = pickle.load(data_file)  # 获取所有数据点的list
     data_file.close()

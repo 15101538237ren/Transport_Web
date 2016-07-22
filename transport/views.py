@@ -39,7 +39,8 @@ def region_statistics(request):
     table_arr=load_pickle_from(STATIC_ROOT + os.sep + 'labeledpoints.pkl')
 
     points_info_dict = {}
-    for i in range(len(table_arr)):
+    table_arr_length = len(table_arr)
+    for i in range(table_arr_length):
         data_list = get_points_in_region(table_arr[i],slat,slng,elat,elng,2)
         points_info_dict['type' + str(i + 1)] = data_list
 
@@ -51,7 +52,7 @@ def region_statistics(request):
 #通过max_index来选择需要返回哪些数据
 def get_points_in_region(table,slat,slng,elat,elng,MAX_INDEX):
 
-    table = sorted(table,key=itemgetter(LNG_INDEX))  #得到一种违章类型的list,先按照经度排序
+    #得到一种违章类型的list,之前在helper中处理数据时就已经按照先经度，后纬度的顺序排好序了
     min_lng_index = lower_bound_search(table,0,len(table),slng,LNG_INDEX)
     max_lng_index = upper_bound_search(table,0,len(table),elng,LNG_INDEX)-1  #upper_bound函数求出来的是小于这个数字的最大数
     sub_table = sorted(table[min_lng_index:max_lng_index+1],key=itemgetter(LAT_INDEX))  #将在经度范围内的数据再次按照纬度重新排序
@@ -113,6 +114,41 @@ def upper_bound_search(table,l,r,num,type):
     return l
 def polyline_statistics(request):
     point_list_str=request.GET['point_list']
+    point_list = json.loads(point_list_str)
+
+    table_arr = load_pickle_from(STATIC_ROOT + os.sep + 'labeledpoints.pkl')
+
+    table_arr_length = len(table_arr)
+
+    minX,maxX,minY,maxY = MAXINT,0,MAXINT,0
+    for point in point_list:
+        minX,maxX,minY,maxY = min(minX,point[LNG_INDEX]),max(maxX,point[LNG_INDEX]),min(minY,point[LAT_INDEX]),max(maxY,point[LAT_INDEX])
+
+    in_area_points = []
+
+    for i in range(table_arr_length):
+
+        table = table_arr[i]
+
+        min_lng_index = lower_bound_search(table, 0, len(table), minX, LNG_INDEX)
+        max_lng_index = upper_bound_search(table, 0, len(table), minY, LNG_INDEX) - 1  # upper_bound函数求出来的是小于这个数字的最大数
+        sub_table = sorted(table[min_lng_index:max_lng_index + 1], key=itemgetter(LAT_INDEX))  # 将在经度范围内的数据再次按照纬度重新排序
+
+        min_final_index = lower_bound_search(sub_table, 0, len(sub_table), minY, LAT_INDEX)
+        max_final_index = upper_bound_search(sub_table, 0, len(sub_table), maxY, LAT_INDEX) - 1
+
+        type_list = []
+
+        for j in range(min_final_index, max_final_index + 1):
+            point = table[j]
+            [status, dis] = check_point(point_list, point[LNG_INDEX], point[LAT_INDEX])
+            if(status > 0):
+                type_list.append([point[LNG_INDEX],point[LAT_INDEX],point[DIRECTION_INDEX]])
+        in_area_points.append(type_list)
+    json_str = json.dumps(in_area_points)
+    return success_response(json_str)
+
+
 
 @require_POST
 def label_the_road(request):

@@ -382,6 +382,11 @@
         var option_now=option;
         refresh_data(option_now);
     }
+    function distance(x,y){
+        lat_sqr=Math.pow((x.lat- y.lat),2);
+        lng_sqr=Math.pow((x.lng- y.lng),2);
+        return Math.sqrt(lat_sqr+lng_sqr);
+    }
 </script>
 {% endblock %}
 
