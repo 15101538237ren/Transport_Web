@@ -199,9 +199,9 @@ def get_sum_data_list(sub_table, min_final_index, max_final_index, area_points_l
     else:
         print("NO")'''
     data_list = sorted(data_list, key=itemgetter('datatime'))
-    for data in data_list:
-        data['posNum'] = data['posNum'] / date_num
-        data['negNum'] = data['negNum'] / date_num
+    # for data in data_list:
+    #     data['posNum'] = data['posNum'] / date_num
+    #     data['negNum'] = data['negNum'] / date_num
 
     stat_dict = {'pos': {'sum': posSum}, 'neg': {'sum': negSum}}
     return [data_list, stat_dict]
@@ -276,6 +276,7 @@ def label_the_road(request):
 
 def showpath(request):
     noise_invisible=int(request.GET.get("noise_invisible",0))
+    split_show = int(request.GET.get("split_show", 0))
 
     file_names=os.listdir(BASE_DIR+os.sep+"static"+os.sep+"theme")
     theme_names=[]
@@ -285,8 +286,11 @@ def showpath(request):
         static_theme_url.append('/static/theme/'+theme_name)
         theme_names.append(theme_name)
     selected_index=5
-    title="举报量"
+    title="举报量与时间的关系"
     data_type=int(request.GET.get("data_type",0))
-    return render(request, 'transport/diffcolor.html',locals())
+    if split_show==1:
+        return render(request, 'transport/diffcolor_split.html',locals())
+    else:
+        return render(request, 'transport/diffcolor.html', locals())
 def echarts(request):
     return render(request, 'transport/echarts.html',locals())
