@@ -12,6 +12,7 @@
 {% endblock %}
 {% block content %}
 <div id="map"></div>
+
 {# <div >#}
 {#<div class="modal fade" id="bannerModal" tabindex="-1" role="dialog" aria-labelledby="bannerModalLabel" >#}
 {#  <div class="modal-dialog" role="document" style="width:1100px;height: 600px;">#}
@@ -50,6 +51,7 @@
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
         <h4 class="modal-title" id="myModalLabel" align="center">{{ title }}与时间的关系</h4>
+
         <div align="right">
           <span >切换主题</span>
           <select id="theme-select">
@@ -64,7 +66,7 @@
           </select>
         </div>
       </div>
-      <div class="modal-body" id="main" style="width:1400px;height: 600px;">
+      <div class="modal-body" id="modal_body" style="width:1400px;height: 600px;">
 
       </div>
       <div class="modal-footer">
@@ -77,7 +79,7 @@
 <script type="text/javascript">
             var myChart;
             var echarts;
-            var domMain=document.getElementById('main');
+            var modal_body=document.getElementById('modal_body');
             require.config({
                 paths: {
                     echarts: '{% static "js/dist" %}'
@@ -100,19 +102,109 @@
                 );
                 themes_index_dic[theme_name]=i_num;
             }
-
+            var mainChart = $('<div class="chart" id="main" style="width:1400px;height: 600px;"></div>').prependTo(modal_body);
 
             var curTheme=themes_dic[themes_index_dic["helianthus"]];
+            var all_select_group=[];
+            var group_by_type=[];
+            var group_index=0;
+            var type_count=5;
+            var pos_post,neg_post;
+            var legend;
+            for (group_index;group_index<type_count;group_index++)
+            {
+                group_by_type.push([]);
+            }
             require(
                 [
                     'echarts',
-                    'echarts/chart/line',   // 按需加载所需图表，如需动态类型切换功能，别忘了同时加载相应图表
                     'echarts/chart/bar'
                 ],
                 function (ec) {
                     echarts=ec;
-                    myChart = ec.init(domMain,curTheme);
-                    myChart.setOption(option);
+                    myChart = ec.init(mainChart.get(0),curTheme);
+                    myChart.setOption(option,true);
+                    var divLegends = $('<div style="width:100%;text-align:center;padding:0 5%;"></div>').prependTo(modal_body);
+                    legend = myChart.chart['bar'].component.legend;
+                    $(option.legend.data).each(function(i, l){
+                        //var color = legend.getColor(l);
+                        var group_no=i % type_count;
+                        if (l!="") {
+                            group_by_type[group_no].push(l);
+                            all_select_group.push(l);
+                        }
+                        legend.setSelected(l,false);
+                    });
+{#                    $(option.legend.data).each(function(i, l){#}
+{#                        //var color = legend.getColor(l);#}
+{##}
+{#                        var color = legend.getColor(l);#}
+{#                        var labelLegend = $('<label class="legend">' +#}
+{#                                '<span class="label" style="background-color:'+color+'"></span>'+l+'</label>');#}
+{#                        labelLegend.mouseover(function(){#}
+{#                            labelLegend.css('color', color).css('font-weight', 'bold');#}
+{#                        }).mouseout(function(){#}
+{#                            labelLegend.css('color', '#333').css('font-weight', 'normal');#}
+{#                        }).click(function(){#}
+{#                            labelLegend.toggleClass('disabled');#}
+{#                            var selected=!labelLegend.hasClass('disabled');#}
+{#                            legend.setSelected(l,selected);#}
+{#                        });#}
+{#                        divLegends.append(labelLegend);#}
+{#                    });#}
+
+
+                    var checkboxAll = $('<div class="checkbox checkbox-primary checkbox-inline">' +
+                        '<input id="checkbox_all" class="styled" type="checkbox" checked="checked"><label for="checkbox_all">'+'全部'+'</label></div>');
+
+                    divLegends.append(checkboxAll);
+
+                    var group_idx=0;
+                    var group_len=type_count-1;
+                    for (group_idx;group_idx<group_len;group_idx++)
+                    {
+                        var pos_name=group_by_type[group_idx][0];
+                        var neg_name=group_by_type[group_idx][1];
+
+                        var group_name=pos_name.substring(0,pos_name.length-2);
+                        pos_post=pos_name.substring(pos_name.length-2,pos_name.length);
+                        neg_post=neg_name.substring(neg_name.length-2,neg_name.length);
+                        var checkboxLegend = $('<div class="checkbox checkbox-primary checkbox-inline">' +
+                        '<input id="checkbox'+group_idx+'" class="styled" type="checkbox" checked="checked"><label for="checkbox'+group_idx+'">'+group_name+'</label></div>');
+
+                        divLegends.append(checkboxLegend);
+                    }
+
+                    $(".checkbox").change(function(){
+                        var now_node=this.children[0];
+                        var checked=now_node.checked;
+                        var innertxt=this.innerText;
+                        var pos_txt=innertxt+pos_post;
+                        var neg_txt=innertxt+neg_post;
+
+                        option.legend.selected[pos_txt]= checked;
+                        option.legend.selected[neg_txt]= checked;
+                        refresh_data(option);
+                    });
+
+
+                    $("#checkbox_all").change(function(){
+                        var checked=this.checked;
+                        var checkbox_list=$(".checkbox .styled");
+                        var tmp_index=1;
+                        for (tmp_index;tmp_index<checkbox_list.length;tmp_index++)
+                        {
+                            checkbox_list[tmp_index].checked=checked;
+                        }
+                        var selected_name_hash=option.legend.selected;
+                        for (key_of_hash in selected_name_hash)
+                        {
+                            option.legend.selected[key_of_hash]= checked;
+                        }
+                        refresh_data(option);
+                    });
+
+
                 }
             );
             var themeSelector = $('#theme-select');
@@ -141,18 +233,19 @@
                 myChart.setTheme(curTheme);
             }
             function refresh_data(option_new){
-            if (myChart && myChart.dispose) {
-                myChart.dispose();
-            }
-            myChart = echarts.init(domMain, curTheme);
-            window.onresize = myChart.resize;
-            myChart.setOption(option_new, true);
+                if (myChart && myChart.dispose) {
+                    myChart.dispose();
+                }
+                myChart = echarts.init(mainChart.get(0), curTheme);
+                window.onresize = myChart.resize;
+                myChart.setOption(option_new, true);
             }
 </script>
 <script type="text/javascript">
 {#    $("#bannerModal").modal('show');#}
 {#    show_banner();#}
-    $("#myModal").modal('hide');
+    var myModal=$('#myModal');
+    var mapDiv=$("#map");
     var map = new BMap.Map("map", {});                        // 创建Map实例
     map.centerAndZoom(new BMap.Point(116.404, 39.915), 12);     // 初始化地图,设置中心点坐标和地图级别
     map.enableScrollWheelZoom(true);                        //启用滚轮放大缩小
@@ -242,7 +335,7 @@
                 closeIcon: true,
                 confirm: function () {
                     var point_list_json_str=JSON.stringify(line_points);
-                    var addr = "/transport/area_statistics?" + "point_list="+point_list_json_str + "&data_type=2";
+                    var addr = "/transport/area_statistics?" + "point_list="+point_list_json_str + "&data_type=1";
                     $.get(addr, function (result) {
                         if (result.code == 0) {
                             handle_result_from_json(result);
@@ -304,7 +397,7 @@
                 cancelButton: '否',
                 closeIcon: true,
                 confirm: function () {
-                    var addr = "/transport/area_statistics?" + "slng=" + sw.lng + "&slat=" + sw.lat + "&elng=" + ne.lng + "&elat=" + ne.lat + "&data_type=2";
+                    var addr = "/transport/area_statistics?" + "slng=" + sw.lng + "&slat=" + sw.lat + "&elng=" + ne.lng + "&elat=" + ne.lat + "&data_type=1";
                     $.get(addr, function (result) {
                         if (result.code == 0) {
                             handle_result_from_json(result);
@@ -381,7 +474,9 @@
                                 return d;
                             })()
         }
-        $('#myModal').modal('show');
+        myModal.modal('show');
+
+
         var option_now=option;
         refresh_data(option_now);
     }

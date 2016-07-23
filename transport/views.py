@@ -199,9 +199,9 @@ def get_sum_data_list(sub_table, min_final_index, max_final_index, area_points_l
     else:
         print("NO")'''
     data_list = sorted(data_list, key=itemgetter('datatime'))
-    for data in data_list:
-        data['posNum'] = data['posNum'] / date_num
-        data['negNum'] = data['negNum'] / date_num
+    # for data in data_list:
+    #     data['posNum'] = data['posNum'] / date_num
+    #     data['negNum'] = data['negNum'] / date_num
 
     stat_dict = {'pos': {'sum': posSum}, 'neg': {'sum': negSum}}
     return [data_list, stat_dict]
