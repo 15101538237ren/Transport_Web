@@ -17,6 +17,12 @@
             width:100%;
             height:95%;
         }
+        #modal_dialog,#modal_body{
+            width:1200px;
+            height:1300px;
+        }
+
+
         #navi{
             width:100%;
             height:5%;
@@ -96,7 +102,6 @@
     <link rel="stylesheet" type="text/css" media="screen" href="{% static "css/font-awesome.css" %}" />
     <link rel="stylesheet" href="{% static "css/awesome-bootstrap-checkbox.css" %}" />
     <link rel="stylesheet" type="text/css" media="screen" href="{% static "css/jquery-confirm.min.css" %}" />
-    <link rel="stylesheet" type="text/css" media="screen" href="{% static "css/build.css" %}" />
     <script type="text/javascript" src="{% static "js/jquery-confirm.min.js" %}" charset="UTF-8"></script>
     <script type="text/javascript" src="{% static "js/DrawingManager_min.js" %}"></script>
     <script type="text/javascript" src="{% static "js/DrawingManager_min.js" %}"></script>
@@ -161,6 +166,18 @@
                     <li><a href="{% url 'transport:showpath' %}?noise_invisible=1&data_type=2">违反指示标线点标注</a></li>
                     <li><a href="{% url 'transport:showpath' %}?noise_invisible=1&data_type=3">非机动车道点标注</a></li>
                     <li><a href="{% url 'transport:showpath' %}?noise_invisible=1&data_type=4">公交车道点标注</a></li>
+                  </ul>
+                </li>
+                  <li class="dropdown">
+                  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">点标注（顺逆时针分开）<span class="caret"></span></a>
+                  <ul class="dropdown-menu">
+                    <li><a href="{% url 'transport:showpath' %}">所有点</a></li>
+                    <li><a href="{% url 'transport:showpath' %}?noise_invisible=1&data_type=0&split_show=1">所有点(仅标注点)</a></li>
+                    <li role="separator" class="divider"></li>
+                    <li><a href="{% url 'transport:showpath' %}?noise_invisible=1&data_type=1&split_show=1">应急车道点标注</a></li>
+                    <li><a href="{% url 'transport:showpath' %}?noise_invisible=1&data_type=2&split_show=1">违反指示标线点标注</a></li>
+                    <li><a href="{% url 'transport:showpath' %}?noise_invisible=1&data_type=3&split_show=1">非机动车道点标注</a></li>
+                    <li><a href="{% url 'transport:showpath' %}?noise_invisible=1&data_type=4&split_show=1">公交车道点标注</a></li>
                   </ul>
                 </li>
               </ul>
