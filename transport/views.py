@@ -292,12 +292,42 @@ def get_points_in_region(table_arr,area_points_list,border_list,area_type,data_t
     date_time_min = datetime.datetime(date_min.year, date_min.month, date_min.day, t_h, 0, 0)
     for hour in range(hours+1):
         datetmp = date_time_min + datetime.timedelta(hours=hour)
-        date_list.append(str(datetmp.hour) + ':' + str(datetmp.minute) + '\n' + str(datetmp.month) + '/' + str(datetmp.day))
+        date_list.append(str(datetmp.hour) + ':' + str(0) + '\n' + str(datetmp.month) + '/' + str(datetmp.day))
 
     points_info_dict['date_list'] = date_list
+    points_info_dict = convert_points_info(points_info_dict, table_arr_length)
     return points_info_dict
 
 
+def convert_points_info(points_info_dict, type_length):
+    date_time_dict = {}
+    date_list = points_info_dict['date_list']
+    date_list_length = len(date_list)
+
+    for i in range(date_list_length):
+        date = date_list[i]
+        date_time_dict[date] = i
+
+    for i in range(type_length):
+        type_points_list = points_info_dict['type'+str(i+1)]
+        type_points_list_length = len(type_points_list)
+        date_points_list = []
+        for j in range(date_list_length):
+            date_points_list.append({'posNum': 0, 'negNum': 0})
+
+        for j in range(type_points_list_length):
+            type_point = type_points_list[j]
+
+            date = type_point['datatime']
+
+            str_date = str(date[3]) + ':' + str(0) + '\n' + str(date[1]) + '/' + str(date[2])
+
+            date_time_index = date_time_dict.get(str_date, -1)
+            point = date_points_list[date_time_index]
+            point['posNum'] += type_point['posNum']
+            point['negNum'] += type_point['negNum']
+        points_info_dict['type'+str(i+1)] = date_points_list
+    return points_info_dict
 
 
 
