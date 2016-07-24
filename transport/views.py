@@ -239,6 +239,9 @@ def get_points_in_region(table_arr,area_points_list,border_list,area_type,data_t
     return points_info_dict
 
 
+
+
+
 #type用来区分经度还是纬度，0表示经度，1表示纬度
 def lower_bound_search(table,l,r,num,type):
     while(l<r):
