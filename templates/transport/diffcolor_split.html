@@ -211,9 +211,9 @@
     function handle_result_from_json(result)
     {
         rtn_json=JSON.parse(result.message);
-        var date_list=rtn_json.date_list;
-        option_bar1.xAxis[0].data=date_list;
-        option_bar2.xAxis[0].data=date_list;
+{#        var date_list=rtn_json.date_list;#}
+{#        option_bar1.xAxis[0].data=date_list;#}
+{#        option_bar2.xAxis[0].data=date_list;#}
         statistic=rtn_json.statistic;
         statistic_list=[statistic.type1,statistic.type2,statistic.type3,statistic.type4];
         for(var p = 0; p < 2*statistic_list.length; p++) {
@@ -242,8 +242,9 @@
                                     var date_object=object_now.datatime;
                                     var value_data=-1;
                                     value_data=object_now.negNum;
-                                    //var date_of_data=new Date(date_object[0], date_object[1]-1, date_object[2], date_object[3], 0 , 0);
+                                    var date_of_data=new Date(date_object[0], date_object[1]-1, date_object[2], date_object[3], 0 , 0);
                                     d.push([
+                                        date_of_data,
                                         value_data
                                     ]);
                                 }
@@ -259,8 +260,9 @@
                                     var date_object=object_now.datatime;
                                     var value_data=-1;
                                     value_data=object_now.posNum;
-                                    //var date_of_data=new Date(date_object[0], date_object[1]-1, date_object[2], date_object[3], 0 , 0);
+                                    var date_of_data=new Date(date_object[0], date_object[1]-1, date_object[2], date_object[3], 0 , 0);
                                     d.push([
+                                        date_of_data,
                                         value_data
                                     ]);
                                 }
