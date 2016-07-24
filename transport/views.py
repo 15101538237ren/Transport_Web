@@ -294,8 +294,8 @@ def get_points_in_region(table_arr,area_points_list,border_list,area_type,data_t
         datetmp = date_time_min + datetime.timedelta(hours=hour)
         date_list.append(str(datetmp.hour) + ':' + str(0) + '\n' + str(datetmp.month) + '/' + str(datetmp.day))
 
-    points_info_dict['date_list'] = date_list
-    points_info_dict = convert_points_info(points_info_dict, table_arr_length)
+    #points_info_dict['date_list'] = date_list
+    #points_info_dict = convert_points_info(points_info_dict, table_arr_length)
     return points_info_dict
 
 
