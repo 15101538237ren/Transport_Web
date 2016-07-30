@@ -434,6 +434,6 @@ def showpath(request):
     if split_show==1:
         return render(request, 'transport/diffcolor_split.html',locals())
     else:
-        return render(request, 'transport/diff_color_base3.html', locals())
+        return render(request, 'transport/diffcolor.html', locals())
 def echarts(request):
     return render(request, 'transport/echarts.html',locals())
