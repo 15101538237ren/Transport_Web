@@ -39,7 +39,7 @@ def area_statistics(request):
 
     area_list_str = request.GET.get('point_list',-2)
     data_type = int(request.GET.get('data_type', -1))
-
+    point_type = int(request.GET.get('point_type', 1))  #0:全部，1:应急车道，2，3，4...
     area_points_list, border_list = [], []
     area_type = IN_POLYGON_AREA
 
@@ -62,8 +62,12 @@ def area_statistics(request):
         border_list = [minX, maxX, minY, maxY]
     table_arr=load_pickle_from(STATIC_ROOT + os.sep + 'labeledpoints.pkl')
 
-
-    points_info_dict = get_points_in_region(table_arr, area_points_list, border_list, area_type, data_type)
+    tmp_table_arr = []
+    if(point_type == 0):
+        tmp_table_arr = table_arr
+    else:
+        tmp_table_arr.append(table_arr[point_type - 1])
+    points_info_dict = get_points_in_region(tmp_table_arr, area_points_list, border_list, area_type, data_type)
 
     data_points_json = json.dumps(points_info_dict, sort_keys=True, indent=4)
     print(data_points_json)
