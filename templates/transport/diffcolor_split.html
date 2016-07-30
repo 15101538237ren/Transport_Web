@@ -261,9 +261,35 @@
     function handle_result_from_json(result)
     {
         rtn_json=JSON.parse(result.message);
-        /*var date_list=rtn_json.date_list;
-        option_bar1.xAxis[0].data=date_list;
-        option_bar2.xAxis[0].data=date_list; */
+{#        /*var date_list=rtn_json.date_list;#}
+{#        option_bar1.xAxis[0].data=date_list;#}
+{#        option_bar2.xAxis[0].data=date_list; */#}
+{#        var daylist=rtn_json.day_list;#}
+{#        var y_max=rtn_json.max_num;#}
+{#        var data_of_markline=[];#}
+{#        for(var day = 0; day < daylist.length; day++) {#}
+{#            var ele=[];#}
+{#            var new_day=new Date(daylist[day][0], daylist[day][1]-1, daylist[day][2], daylist[day][3], 0 , 0);#}
+{#            var tmp_dic1={};#}
+{#            tmp_dic1["value"]=new_day;#}
+{#            tmp_dic1["x"]=new_day;#}
+{#            tmp_dic1["y"]=0;#}
+{#            tmp_dic1["valueIndex"]=0;#}
+{#            ele.push(tmp_dic1);#}
+{#            var tmp_dic={};#}
+{#            tmp_dic["x"]=new_day;#}
+{#            tmp_dic["y"]=y_max;#}
+{#            tmp_dic["valueIndex"]=0;#}
+{#            ele.push(tmp_dic);#}
+{#            data_of_markline.push(ele);#}
+{#        }#}
+{#        option_bar1.series[0].markLine.data=data_of_markline;#}
+{#        option_bar1.yAxis[0].min=y_max;#}
+{#        option_bar2.yAxis[0].min=y_max;#}
+{#        option_bar1.yAxis[0].max=y_max;#}
+{#        option_bar2.yAxis[0].max=y_max;#}
+{#        refresh_data(option_bar1,"bar",1);#}
+{#        refresh_data(option_bar2,"bar",2);#}
         statistic=rtn_json.statistic;
         statistic_list=[statistic.type1,statistic.type2,statistic.type3,statistic.type4];
         for(var p = 0; p < 2*statistic_list.length; p++) {
