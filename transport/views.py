@@ -85,7 +85,7 @@ def point_is_in_area(area_points_list, border_list, point,type):
 
 
 def get_time_data_list(sub_table, min_final_index, max_final_index, area_points_list, border_list, area_type):
-    data_list, date_dict, date_num = [], {}, 0
+    data_list, day_list, day_dict, day_hour_dict, day_num, date_num = [], [], {}, {}, 0, 0
     '''count = 0
     test_list = []
     for i in range(len(table)):
@@ -98,7 +98,8 @@ def get_time_data_list(sub_table, min_final_index, max_final_index, area_points_
     test_list = sorted(test_list,key = itemgetter(LNG_INDEX,LAT_INDEX))
     test2_list = []'''
 
-    posSum, negSum = 0, 0
+    posSum, negSum, maxNum = 0, 0, 0
+    num_type1, num_type2 = 'posNum', 'negNum'
     table_date = sub_table[0][DATE_TIME_INDEX]
     date_hour_min = datetime.datetime(*tuple(table_date)[0:4])
     date_hour_max = datetime.datetime(*tuple(table_date)[0:4])
@@ -117,11 +118,24 @@ def get_time_data_list(sub_table, min_final_index, max_final_index, area_points_
         if(date_hour>date_hour_max):
             date_hour_max = date_hour
 
+        str_day = str(date[0]) + str(date[1]) + str(date[2])   #将日期存成字符串
+        day_index = day_dict.get(str_day, -1)
+        if(day_index == -1):  #这一天在字典中不存在，则将这一天所有24小时的数据插入到list中
+            day_dict[str_day] = day_num
+            for i in range(24):
+                str_day_hour = str_day + str(i)
+                day_hour_dict[str_day_hour] = date_num
+                date_time = (date[0],date[1],date[2],i)
+                day_info = {'datatime': date_time, num_type1: 0, num_type2: 0}
+                data_list.append(day_info)
+                date_num += 1
+            day_list.append([date[0], date[1], date[2]])  #日期list
+            day_num +=1
 
-        str_day = str(date[0]) + str(date[1]) + str(date[2]) + str(date[3])  # 将日期存成字符串
-        day_index = date_dict.get(str_day, -1)
-        if (day_index == -1):  # 表示data_index里面没有这个字段
-            date_dict[str_day] = date_num
+        str_day_hour = str_day + str(date[3])  # 将日期+小时存成字符串
+        day_hour_index = day_hour_dict.get(str_day_hour, -1)
+        '''if (day_hour_index == -1):  # 表示data_index里面没有这个字段
+            day_hour_dict[str_day_hour] = date_num
             # 获取时间数据只到小时级别
             day_info = {'datatime': date[:4], 'posNum': 0, 'negNum': 0}
             if (sub_table[j][DIRECTION_INDEX] == 1):
@@ -132,14 +146,22 @@ def get_time_data_list(sub_table, min_final_index, max_final_index, area_points_
                 negSum += 1
             data_list.append(day_info)
             date_num += 1
-        else:
-            day_info = data_list[day_index]
-            if (sub_table[j][DIRECTION_INDEX] == 1):
-                day_info['posNum'] += 1
-                posSum += 1
-            elif (sub_table[j][DIRECTION_INDEX] == -1):
-                day_info['negNum'] += 1
-                negSum += 1
+        else:'''
+        day_info = data_list[day_hour_index]
+        if (sub_table[j][DIRECTION_INDEX] == 1):
+            if(day_info[num_type1] == '-'):
+                day_info[num_type1] = 1
+            else:
+                day_info[num_type1] += 1
+            maxNum = max(maxNum, day_info[num_type1])
+            posSum += 1
+        elif (sub_table[j][DIRECTION_INDEX] == -1):
+            if (day_info[num_type2] == '-'):
+                day_info[num_type2] = 1
+            else:
+                day_info[num_type2] += 1
+            maxNum = max(maxNum, day_info[num_type2])
+            negSum += 1
 
     '''test2_list = sorted(test2_list,key = itemgetter(LNG_INDEX,LAT_INDEX))
     count2 = 0
@@ -152,7 +174,7 @@ def get_time_data_list(sub_table, min_final_index, max_final_index, area_points_
         print("NO")'''
     data_list = sorted(data_list, key=itemgetter('datatime'))
     stat_dict = {'pos': {'sum': posSum}, 'neg': {'sum': negSum}}
-    return [data_list, stat_dict, [date_hour_min,date_hour_max] ]
+    return [data_list, stat_dict, [date_hour_min,date_hour_max], maxNum, day_list]
 
 
 def get_sum_data_list(sub_table, min_final_index, max_final_index, area_points_list, border_list, area_type):
@@ -230,7 +252,7 @@ def get_sum_data_list(sub_table, min_final_index, max_final_index, area_points_l
     #     data['negNum'] = data['negNum'] / date_num
 
     stat_dict = {'pos': {'sum': posSum}, 'neg': {'sum': negSum}}
-    return [data_list, stat_dict, [date_hour_min,date_hour_max]]
+    return [data_list, stat_dict, [date_hour_min, date_hour_max]]
 
 
 
@@ -248,6 +270,7 @@ def get_points_in_region(table_arr,area_points_list,border_list,area_type,data_t
     table_date = table_arr[0][0][DATE_TIME_INDEX]
     date_hour_min = datetime.datetime(*tuple(table_date)[0:4])
     date_hour_max = datetime.datetime(*tuple(table_date)[0:4])
+    max_num, day_dict, day_num, day_list = 0, {}, 0, []
 
     for i in range(table_arr_length):
         table = table_arr[i]
@@ -259,22 +282,45 @@ def get_points_in_region(table_arr,area_points_list,border_list,area_type,data_t
         min_final_index = lower_bound_search(sub_table, 0, len(sub_table), border_list[2], LAT_INDEX)
         max_final_index = upper_bound_search(sub_table, 0, len(sub_table), border_list[3], LAT_INDEX)-1
 
-        data_list, stat_dict, date_hour_list = [], {}, {}
+        data_list, stat_dict, date_hour_list, tmp_num, tmp_day_list = [], {}, {}, 0, 0
         if (data_type == 0):
             pass
         elif (data_type == 1):
-            [data_list, stat_dict, date_hour_list] = get_time_data_list(sub_table, min_final_index, max_final_index, area_points_list, border_list, area_type)
+            [data_list, stat_dict, date_hour_list, tmp_num, tmp_day_list] = get_time_data_list(sub_table, min_final_index, max_final_index, area_points_list, border_list, area_type)
         elif (data_type == 2):
             [data_list, stat_dict, date_hour_list] = get_sum_data_list(sub_table, min_final_index, max_final_index, area_points_list, border_list, area_type)
         if(date_hour_list[0] < date_hour_min):
             date_hour_min = date_hour_list[0]
         if(date_hour_list[1] > date_hour_max):
             date_hour_max = date_hour_list[1]
+        max_num = max(max_num, tmp_num)
+        for day in tmp_day_list:
+            str_day = str(day[0]) + str(day[1]) +str(day[2])
+            day_index = day_dict.get(str_day, -1)
+            if(day_index == -1):
+                day_dict[str_day] = day_num
+                day_list.append(day)
+                day_num += 1
         #for key,value in date_dict.items():
             #if(points_date_dict.get(key,-1) == -1):
                # points_date_dict[key] = value
         points_info_dict['type' + str(i + 1)] = data_list
         points_info_dict['statistic']['type' + str(i + 1)] = stat_dict
+
+    day_list = sorted(day_list)
+    day_list.pop(0)
+    day_list_len = len(day_list)
+    for i in range(day_list_len):
+        day = day_list[i]
+        day_list[i] = [day[0], day[1], day[2], 0]
+
+    '''max_index = len(day_list) - 1
+    date_day = day_list[max_index]
+    date_last_day = datetime.datetime(date_day[0], date_day[1], date_day[2], 0)
+    date_last_day = date_last_day + datetime.timedelta(days = 1)
+    day_list.append([date_last_day.year, date_last_day.month, date_last_day.day, 0])'''
+
+
     tmp_list = []
     for key, value in points_date_dict.items():
         tmp_list.append([key,value])
@@ -294,6 +340,8 @@ def get_points_in_region(table_arr,area_points_list,border_list,area_type,data_t
         datetmp = date_time_min + datetime.timedelta(hours=hour)
         date_list.append(str(datetmp.hour) + ':' + str(0) + '\n' + str(datetmp.month) + '/' + str(datetmp.day))
 
+    points_info_dict['day_list'] = day_list
+    points_info_dict['max_num'] = max_num
     #points_info_dict['date_list'] = date_list
     #points_info_dict = convert_points_info(points_info_dict, table_arr_length)
     return points_info_dict
