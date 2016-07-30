@@ -64,6 +64,7 @@ def area_statistics(request):
 
 
     points_info_dict = get_points_in_region(table_arr, area_points_list, border_list, area_type, data_type)
+
     data_points_json = json.dumps(points_info_dict, sort_keys=True, indent=4)
     print(data_points_json)
 

@@ -272,7 +272,7 @@
                 closeIcon: true,
                 confirm: function () {
                     var point_list_json_str=JSON.stringify(line_points);
-                    var addr = "/transport/area_statistics?" + "point_list="+point_list_json_str + "&data_type=1";
+                    var addr = "/transport/area_statistics?" + "point_list="+point_list_json_str + "&data_type=1&point_type={{ data_type }}";
                     $.get(addr, function (result) {
                         if (result.code == 0) {
                             handle_result_from_json(result);
@@ -334,7 +334,7 @@
                 cancelButton: '否',
                 closeIcon: true,
                 confirm: function () {
-                    var addr = "/transport/area_statistics?" + "slng=" + sw.lng + "&slat=" + sw.lat + "&elng=" + ne.lng + "&elat=" + ne.lat + "&data_type=1";
+                    var addr = "/transport/area_statistics?" + "slng=" + sw.lng + "&slat=" + sw.lat + "&elng=" + ne.lng + "&elat=" + ne.lat + "&data_type=1&point_type={{ data_type }}";
                     $.get(addr, function (result) {
                         if (result.code == 0) {
                             handle_result_from_json(result);
