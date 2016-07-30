@@ -1,20 +1,21 @@
-{% extends "transport/diffcolor_base3.html" %}
+{% extends "transport/diff_color_base3.html" %}
 {% load static from staticfiles %}
 {% block title %}点标注结果{% endblock %}
 {% block headscript %}
-<script type="text/javascript">
-     var myChart = echarts.init(document.getElementById('myModal'));
-     var myModal=$("#myModal");
-</script>
+
 {% endblock %}
 {% block endscript %}
-
+<script type="text/javascript">
+     var myModal=$("#modal_body");
+     var myChart = echarts.init(document.getElementById('modal_body'));
+</script>
 <script type="text/javascript">
     function handle_result_from_json(result)
     {
-        $.get(result.addr).done(function (rtn_json) {
-            option=JSON.parse(rtn_json);
-            myChart.setOption(option);
+        var addr=result.message;
+        $.get(addr).done(function (rtn_json) {
+            //option=JSON.parse(rtn_json);
+            myChart.setOption(rtn_json);
             myModal.modal('show');
         });
     }

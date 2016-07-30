@@ -73,14 +73,14 @@ def area_statistics(request):
     points_info_dict = get_points_in_region(tmp_table_arr, type_index_list, area_points_list, border_list, area_type, data_type)
 
     data_points_json = json.dumps(points_info_dict, sort_keys=True, indent=4)
-    option=generate_option_template(title=True,tooltip=False,dataZoom=True,legend=True,toolbox=True,grid=True,xAxis=True,yAxis=True,series=True)
+    option=generate_option_template(title=True,tooltip=False,dataZoom=True,legend=True,toolbox=False,grid=False,xAxis=True,yAxis=True,series=True)
 
     option_json = json.dumps(option, sort_keys=True, indent=4)
-    put_data_into_json(option,title="应急车道",legend_names=["顺时针","逆时针"],xAxisData=points_info_dict["type1"]["datatime"],yAxisDictList={"type": 'value'},seriesDictList= [{"name":"顺时针",
+    put_data_into_json(option,title="应急车道",legend_names=["顺时针","逆时针"],dataZoomDictList=[{"show": True,"realtime": True,"start": 65,"end": 85},{"type": "inside","realtime": True,"start": 65,"end": 85}],xAxisData=points_info_dict["type1"]["datatime"],yAxisDictList={"type": 'value'},seriesDictList= [{"name":"顺时针",
                                                                                                                                                                         "type":"line","data":points_info_dict["type1"]["posNum"]},{"name":"逆时针",
                                                                                                                                                                         "type":"line","data":points_info_dict["type1"]["negNum"]}])
     print(data_points_json)
-    addr=reverse('/static/option/option1.json')
+    addr='/static/option/option1.json'
     return success_response(addr)
 
 #判断点是否在矩形边界区域内
@@ -469,6 +469,6 @@ def showpath(request):
     if split_show==1:
         return render(request, 'transport/diffcolor_split.html',locals())
     else:
-        return render(request, 'transport/diffcolor.html', locals())
+        return render(request, 'transport/diffcolor3.html', locals())
 def echarts(request):
     return render(request, 'transport/echarts.html',locals())

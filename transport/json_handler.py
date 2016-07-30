@@ -24,11 +24,12 @@ def generate_option_template(title=True,tooltip=True,dataZoom=True,legend=True,t
     if series:
         option["series"]={}
     return option
-def put_data_into_json(option_arg,title="title",legend_names=[],xAxisData=[],yAxisDictList=[],seriesDictList=[]):
+def put_data_into_json(option_arg,title="title",dataZoomDictList=[],legend_names=[],xAxisData=[],yAxisDictList=[],seriesDictList=[]):
     option=option_arg
     option["title"]={"text": title,"x":"center"}
     option["legend"]={"data":legend_names,"x": "left"}
     option["xAxis"]=[{"type" : 'category',"boundaryGap" : False,"data":xAxisData}]
+    option["dataZoom"]=dataZoomDictList
     option["yAxis"]=yAxisDictList
     option["series"]=seriesDictList
 
