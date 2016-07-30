@@ -1,0 +1,273 @@
+{% extends "transport/transport_base3.html" %}
+{% load static from staticfiles %}
+{% block head %}
+    <script type="text/javascript" src="{% static "js/echarts3.js" %}"></script>
+    {% ifequal data_type 0 %}
+        <script type="text/javascript" src="{% static "output/pathpoints_all.js" %}"></script>
+    {% else %}
+        <script type="text/javascript" src="{% static "output/pathpoints.js" %}"></script>
+    {% endifequal %}
+    {% block headscript %}
+    {% endblock %}
+{% endblock %}
+{% block content %}
+<div id="map"></div>
+
+<div >
+<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" >
+  <div class="modal-dialog" id="modal_dialog"   role="document" >
+    <div class="modal-content" id="modal_content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title" id="myModalLabel" align="center">{{ title }}</h4>
+      </div>
+      <div class="modal-body" id="modal_body" >
+          {% block modalbody %}
+          {% endblock %}
+      </div>
+      <div class="modal-footer">
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+{% block endscript %}
+{% endblock %}
+<script type="text/javascript" >
+    //百度地图相关代码
+    var myModal=$('#myModal');
+    var mapDiv=$("#map");
+    var map = new BMap.Map("map", {});                        // 创建Map实例
+    map.centerAndZoom(new BMap.Point(116.404, 39.915), 12);     // 初始化地图,设置中心点坐标和地图级别
+    map.enableScrollWheelZoom(true);                        //启用滚轮放大缩小
+    var top_left_control = new BMap.ScaleControl({anchor: BMAP_ANCHOR_BOTTOM_LEFT});// 左上角，添加比例尺
+	var top_left_navigation = new BMap.NavigationControl({anchor: BMAP_ANCHOR_BOTTOM_LEFT});  //左上角，添加默认缩放平移控件
+    map.addControl(top_left_control);
+    map.addControl(top_left_navigation);
+    // 定义一个控件类,即function
+	function CorrControl(){
+	  // 默认停靠位置和偏移量
+	  this.defaultAnchor = BMAP_ANCHOR_TOP_LEFT;
+	  this.defaultOffset = new BMap.Size(10, 10);
+	}
+
+    // 通过JavaScript的prototype属性继承于BMap.Control
+    CorrControl.prototype = new BMap.Control();
+
+    // 自定义控件必须实现自己的initialize方法,并且将控件的DOM元素返回
+    // 在本方法中创建个div元素作为控件的容器,并将其添加到地图容器中
+    CorrControl.prototype.initialize = function(map){
+      // 创建一个DOM元素
+      var div = document.createElement("div");
+      // 添加文字说明
+      div.appendChild(document.createTextNode("相关性分析"));
+      // 设置样式
+      div.style.cursor = "pointer";
+      div.style.border = "1px solid gray";
+      div.style.backgroundColor = "white";
+      div.onclick = function(e){
+        alert("您单击了!");
+      };
+      // 添加DOM元素到地图中
+      map.getContainer().appendChild(div);
+      // 将DOM元素返回
+      return div;
+    };
+    // 创建控件
+    var myCtrl = new CorrControl();
+	// 添加到地图当中
+	map.addControl(myCtrl);
+
+    var noise_invisible={{ noise_invisible }};
+    if (document.createElement('canvas').getContext) {  // 判断当前浏览器是否支持绘制海量点
+        var points1 = [],points2 = [],points3 = [];  // 添加海量点数据
+        label_index=3;
+        {% ifequal data_type 0 %}
+            path_data=pathpoints.data;
+        {% else %}
+            path_data=pathpoints.data[{{ data_type }}-1];
+        {% endifequal %}
+        for (var i = 0; i < path_data.length; i++) {
+            if(path_data[i][label_index]==1){
+                points1.push(new BMap.Point(path_data[i][0], path_data[i][1]));
+            }else if(path_data[i][label_index]==-1) {
+                points2.push(new BMap.Point(path_data[i][0], path_data[i][1]));
+            }else {
+                points3.push(new BMap.Point(path_data[i][0], path_data[i][1]));
+            }
+        }
+        var options1 = {
+            //size: BMAP_POINT_SIZE_TINY,
+            size: BMAP_POINT_SIZE_SMALLER,
+            //shape: BMAP_POINT_SHAPE_STAR,
+            color: '#ff0000'
+        };
+        var options2 = {
+            //size: BMAP_POINT_SIZE_TINY,
+            size: BMAP_POINT_SIZE_SMALLER,
+            //shape: BMAP_POINT_SHAPE_STAR,
+            color: '#0000ff'
+        };
+        var options3 = {
+            //size: BMAP_POINT_SIZE_TINY,
+            size: BMAP_POINT_SIZE_SMALLER,
+            //shape: BMAP_POINT_SHAPE_STAR,
+            color: '#000000'
+        };
+        var pointCollection1 = new BMap.PointCollection(points1, options1);  // 初始化PointCollection
+        var pointCollection2 = new BMap.PointCollection(points2, options2);  // 初始化PointCollection
+        var pointCollection3 = new BMap.PointCollection(points3, options3);  // 初始化PointCollection
+
+        map.addOverlay(pointCollection1);  // 添加Overlay
+        map.addOverlay(pointCollection2);  // 添加Overlay
+        if (noise_invisible==0) {
+            map.addOverlay(pointCollection3);  // 添加Overlay
+        }
+    } else {
+        alert('请在chrome、safari、IE8+以上浏览器查看本示例');
+    }
+    var overlays = [];
+
+    var overlaycomplete = function(e){
+        if (e.drawingMode=="polyline")//如果是画多边形结束后
+        {
+            var line_points = e.overlay.ia;
+            poly_start_point=line_points[0];
+            poly_end_point=line_points[line_points.length-1];
+            distance_of_st=distance(poly_start_point,poly_end_point);
+            threshold=0.0022;
+            if (distance_of_st <= threshold)
+            {
+
+                now_overlay= e.overlay;
+
+                $.confirm({
+                confirmButtonClass: 'btn-info',
+                cancelButtonClass: 'btn-danger',
+
+                keyboardEnabled: true,
+                title: '信息',
+                content: '是否选择当前区域中的数据点?',
+                confirmButton: '是',
+                cancelButton: '否',
+                closeIcon: true,
+                confirm: function () {
+                    var point_list_json_str=JSON.stringify(line_points);
+                    var addr = "/transport/area_statistics?" + "point_list="+point_list_json_str + "&data_type=1";
+                    $.get(addr, function (result) {
+                        if (result.code == 0) {
+                            handle_result_from_json(result);
+                            map.removeOverlay(e.overlay);
+                        }
+                        else {
+                            alert(result.message);
+                            map.removeOverlay(e.overlay);
+                        }
+                    });
+                },
+                cancel: function () {
+                    map.removeOverlay(e.overlay);
+                }
+            });
+            }
+            else {
+                $.confirm({
+                confirmButtonClass: 'btn-info',
+                cancelButtonClass: 'btn-default',
+
+                keyboardEnabled: true,
+                title: '警告',
+                content: '选择的区域起点和终点应相同,请重新绘制!',
+                confirmButton: '确定',
+                cancelButton: '取消',
+                closeIcon: true,
+                confirm: function () {
+                    map.removeOverlay(e.overlay);
+                },
+                cancel: function () {
+                    map.removeOverlay(e.overlay);
+                }
+            });
+            }
+        }
+        if (e.drawingMode=="rectangle") {//画矩形结束
+            var olRectPoint = e.overlay.ro;
+            /* *.Nk是从 e 的dom节点中寻找到的，百度本身没有提供此方法的介绍。
+             * olRectPoint坐标排序方式
+             *	┌─────────────────────┐
+             *	│0					1 │
+             *	│					  │
+             *	│3					2 │
+             *	└─────────────────────┘
+             * */
+            var sw = olRectPoint[0];		//左上
+            var ne = olRectPoint[2];		//右下
+            //alert('左上：'+ sw.lng+',' + sw.lat + '    右下：'+ne.lng+','+ne.lat);
+
+            $.confirm({
+                confirmButtonClass: 'btn-info',
+                cancelButtonClass: 'btn-danger',
+
+                keyboardEnabled: true,
+                title: '信息',
+                content: '是否选择当前区域中的数据点?',
+                confirmButton: '是',
+                cancelButton: '否',
+                closeIcon: true,
+                confirm: function () {
+                    var addr = "/transport/area_statistics?" + "slng=" + sw.lng + "&slat=" + sw.lat + "&elng=" + ne.lng + "&elat=" + ne.lat + "&data_type=1";
+                    $.get(addr, function (result) {
+                        if (result.code == 0) {
+                            handle_result_from_json(result);
+                            map.removeOverlay(e.overlay);
+                        }
+                        else {
+                            alert(result.message);
+                            map.removeOverlay(e.overlay);
+                        }
+                    });
+                },
+                cancel: function () {
+                    map.removeOverlay(e.overlay);
+                }
+            });
+        }
+    };
+    var styleOptions = {
+        strokeColor:"blue",    //边线颜色。
+        fillColor:"blue",      //填充颜色。当参数为空时，圆形将没有填充效果。
+        strokeWeight: 3,       //边线的宽度，以像素为单位。
+        strokeOpacity: 0.5,	   //边线透明度，取值范围0 - 1。
+        fillOpacity: 0.2,      //填充的透明度，取值范围0 - 1。
+        strokeStyle: 'solid' //边线的样式，solid或dashed。
+    };
+    //实例化鼠标绘制工具
+    var drawingManager = new BMapLib.DrawingManager(map, {
+        isOpen: false, //是否开启绘制模式
+        enableDrawingTool: true, //是否显示工具栏
+        drawingToolOptions: {
+            anchor: BMAP_ANCHOR_TOP_RIGHT, //位置
+            offset: new BMap.Size(5, 5), //偏离值
+        },
+        circleOptions: styleOptions, //圆的样式
+        polylineOptions: styleOptions, //线的样式
+        polygonOptions: styleOptions, //多边形的样式
+        rectangleOptions: styleOptions //矩形的样式
+    });
+	 //添加鼠标绘制工具监听事件，用于获取绘制结果
+    drawingManager.addEventListener('overlaycomplete', overlaycomplete);
+    function clearAll() {
+		for(var i = 0; i < overlays.length; i++){
+            map.removeOverlay(overlays[i]);
+        }
+        overlays.length = 0
+    }
+
+    function distance(x,y){
+        lat_sqr=Math.pow((x.lat- y.lat),2);
+        lng_sqr=Math.pow((x.lng- y.lng),2);
+        return Math.sqrt(lat_sqr+lng_sqr);
+    }
+
+</script>
+{% endblock %}

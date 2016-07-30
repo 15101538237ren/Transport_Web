@@ -181,9 +181,11 @@
                         if (result.code == 0) {
                             alert("区域内有" + result.message + "个点!");
                             //overlays.push(e.overlay);
+                            map.removeOverlay(e.overlay);
                         }
                         else {
                             alert(result.message);
+                            map.removeOverlay(e.overlay);
                         }
                     });
                 },

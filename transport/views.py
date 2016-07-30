@@ -8,6 +8,7 @@ from Transport_Web.settings import STATIC_ROOT
 from django.views.decorators.http import require_GET, require_POST
 from transport.direction import *
 import pytz
+from transport.json_handler import generate_option_template
 from operator import itemgetter, attrgetter
 # Create your views here.
 
@@ -20,7 +21,8 @@ def index(request):
     clockwise=direction(1,u"顺时针")
     anti_clockwise=direction(-1,u"逆时针")
     directions=[clockwise,anti_clockwise]
-    return render(request, 'transport/baidu.html',locals())
+    noise_invisible=1;
+    return render(request, 'transport/test.html',locals())
 def region(request):
     slat=float(request.GET.get("slat"))
     slng=float(request.GET.get("slng"))
@@ -64,6 +66,7 @@ def area_statistics(request):
     points_info_dict = get_points_in_region(table_arr, area_points_list, border_list, area_type, data_type)
     data_points_json = json.dumps(points_info_dict, sort_keys=True, indent=4)
     print(data_points_json)
+
     return success_response(data_points_json)
 
 #判断点是否在矩形边界区域内
@@ -431,6 +434,6 @@ def showpath(request):
     if split_show==1:
         return render(request, 'transport/diffcolor_split.html',locals())
     else:
-        return render(request, 'transport/diffcolor.html', locals())
+        return render(request, 'transport/diff_color_base3.html', locals())
 def echarts(request):
     return render(request, 'transport/echarts.html',locals())
