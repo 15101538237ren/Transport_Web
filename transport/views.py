@@ -368,6 +368,8 @@ def get_three_list(point_dict):
         table_len = len(table)
         table_info_dict = {'datatime':[], 'posNum':[], 'negNum':[]}
         for j in range(table_len):
+            tmplist = table[j]['datatime']
+            table[j]['datatime'] = str(tmplist[1]) + '/' + str(tmplist[2]) + '\n' + str(tmplist[3]) + ':00'
             addEntityToList(table_info_dict, 'datatime', table[j], [])
             addEntityToList(table_info_dict, 'posNum', table[j], 0)
             addEntityToList(table_info_dict, 'negNum', table[j], 0)
