@@ -347,8 +347,27 @@ def get_points_in_region(table_arr,area_points_list,border_list,area_type,data_t
     points_info_dict['max_num'] = max_num
     #points_info_dict['date_list'] = date_list
     #points_info_dict = convert_points_info(points_info_dict, table_arr_length)
+
+    points_info_dict = get_three_list(points_info_dict)
+
     return points_info_dict
 
+
+def addEntityToList(dict1,key,dict2,def_type):
+    dict1[key].append(dict2.get(key,def_type))
+
+def get_three_list(point_dict):
+    point_info_dict = {}
+    for i in range(1,5):
+        table = point_dict['type' + str(i)]
+        table_len = len(table)
+        table_info_dict = {'datatime':[], 'posNum':[], 'negNum':[]}
+        for j in range(table_len):
+            addEntityToList(table_info_dict, 'datatime', table[j], [])
+            addEntityToList(table_info_dict, 'posNum', table[j], 0)
+            addEntityToList(table_info_dict, 'negNum', table[j], 0)
+        point_info_dict['type' + str(i)] = table_info_dict
+    return point_info_dict
 
 def convert_points_info(points_info_dict, type_length):
     date_time_dict = {}
@@ -434,6 +453,6 @@ def showpath(request):
     if split_show==1:
         return render(request, 'transport/diffcolor_split.html',locals())
     else:
-        return render(request, 'transport/diff_color_base3.html', locals())
+        return render(request, 'transport/diffcolor.html', locals())
 def echarts(request):
     return render(request, 'transport/echarts.html',locals())
