@@ -8,7 +8,7 @@ from Transport_Web.settings import STATIC_ROOT
 from django.views.decorators.http import require_GET, require_POST
 from transport.direction import *
 import pytz
-from transport.json_handler import generate_option_template
+from transport.json_handler import generate_option_template,put_data_into_json
 from operator import itemgetter, attrgetter
 # Create your views here.
 
@@ -63,16 +63,25 @@ def area_statistics(request):
     table_arr=load_pickle_from(STATIC_ROOT + os.sep + 'labeledpoints.pkl')
 
     tmp_table_arr = []
+    type_index_list = []
     if(point_type == 0):
         tmp_table_arr = table_arr
+        type_index_list = [range(1,len(table_arr)+1)]
     else:
         tmp_table_arr.append(table_arr[point_type - 1])
-    points_info_dict = get_points_in_region(tmp_table_arr, area_points_list, border_list, area_type, data_type)
+        type_index_list = [point_type]
+    points_info_dict = get_points_in_region(tmp_table_arr, type_index_list, area_points_list, border_list, area_type, data_type)
 
     data_points_json = json.dumps(points_info_dict, sort_keys=True, indent=4)
-    print(data_points_json)
+    option=generate_option_template(title=True,tooltip=False,dataZoom=True,legend=True,toolbox=True,grid=True,xAxis=True,yAxis=True,series=True)
 
-    return success_response(data_points_json)
+    option_json = json.dumps(option, sort_keys=True, indent=4)
+    put_data_into_json(option,title="应急车道",legend_names=["顺时针","逆时针"],xAxisData=points_info_dict["type1"]["datatime"],yAxisDictList={"type": 'value'},seriesDictList= [{"name":"顺时针",
+                                                                                                                                                                        "type":"line","data":points_info_dict["type1"]["posNum"]},{"name":"逆时针",
+                                                                                                                                                                        "type":"line","data":points_info_dict["type1"]["negNum"]}])
+    print(data_points_json)
+    addr=reverse('/static/option/option1.json')
+    return success_response(addr)
 
 #判断点是否在矩形边界区域内
 def is_in_border(border_list, point):
@@ -268,7 +277,7 @@ def get_sum_data_list(sub_table, min_final_index, max_final_index, area_points_l
 #通过max_index来选择需要返回哪些数据
 #通过area_type来判断是否在矩形区域内，或多边形区域内，area_type==0表示矩形，area_type==1表示多边形
 #通过data_type来返回不同类型的Json格式
-def get_points_in_region(table_arr,area_points_list,border_list,area_type,data_type):
+def get_points_in_region(table_arr,type_index_list,area_points_list,border_list,area_type,data_type):
     points_info_dict = {}
     table_arr_length = len(table_arr)
     points_info_dict['statistic'] = {}
@@ -312,8 +321,8 @@ def get_points_in_region(table_arr,area_points_list,border_list,area_type,data_t
         #for key,value in date_dict.items():
             #if(points_date_dict.get(key,-1) == -1):
                # points_date_dict[key] = value
-        points_info_dict['type' + str(i + 1)] = data_list
-        points_info_dict['statistic']['type' + str(i + 1)] = stat_dict
+        points_info_dict['type' + str(type_index_list[i]) ] = data_list
+        points_info_dict['statistic']['type' + str(type_index_list[i]) ] = stat_dict
 
     day_list = sorted(day_list)
     day_list.pop(0)
@@ -353,7 +362,7 @@ def get_points_in_region(table_arr,area_points_list,border_list,area_type,data_t
     #points_info_dict['date_list'] = date_list
     #points_info_dict = convert_points_info(points_info_dict, table_arr_length)
 
-    points_info_dict = get_three_list(points_info_dict)
+    points_info_dict = get_three_list(points_info_dict,type_index_list)
 
     return points_info_dict
 
@@ -361,9 +370,9 @@ def get_points_in_region(table_arr,area_points_list,border_list,area_type,data_t
 def addEntityToList(dict1,key,dict2,def_type):
     dict1[key].append(dict2.get(key,def_type))
 
-def get_three_list(point_dict):
+def get_three_list(point_dict,type_index_list):
     point_info_dict = {}
-    for i in range(1,5):
+    for i in type_index_list:
         table = point_dict['type' + str(i)]
         table_len = len(table)
         table_info_dict = {'datatime':[], 'posNum':[], 'negNum':[]}
