@@ -308,16 +308,17 @@ def get_points_in_region(table_arr,area_points_list,border_list,area_type,data_t
         points_info_dict['statistic']['type' + str(i + 1)] = stat_dict
 
     day_list = sorted(day_list)
+    day_list.pop(0)
     day_list_len = len(day_list)
     for i in range(day_list_len):
         day = day_list[i]
         day_list[i] = [day[0], day[1], day[2], 0]
 
-    max_index = len(day_list) - 1
+    '''max_index = len(day_list) - 1
     date_day = day_list[max_index]
     date_last_day = datetime.datetime(date_day[0], date_day[1], date_day[2], 0)
     date_last_day = date_last_day + datetime.timedelta(days = 1)
-    day_list.append([date_last_day.year, date_last_day.month, date_last_day.day, 0])
+    day_list.append([date_last_day.year, date_last_day.month, date_last_day.day, 0])'''
 
 
     tmp_list = []
