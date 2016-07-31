@@ -19,9 +19,8 @@
     <div class="modal-content" id="modal_content">
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-        <h4 class="modal-title" id="myModalLabel" align="center">{{ title }}</h4>
       </div>
-      <div class="modal-body" id="modal_body" style="width: 800px;height:600px;">
+      <div class="modal-body" id="modal_body" style="width: 1000px;height:600px;">
           {% block modalbody %}
           {% endblock %}
       </div>
@@ -153,7 +152,7 @@
                 closeIcon: true,
                 confirm: function () {
                     var point_list_json_str=JSON.stringify(line_points);
-                    var addr = "/transport/area_statistics?" + "point_list="+point_list_json_str + "&data_type=1";
+                    var addr = "/transport/area_statistics?" + "point_list="+point_list_json_str + "&data_type=1&point_type={{ data_type }}";
                     $.get(addr, function (result) {
                         if (result.code == 0) {
                             handle_result_from_json(result);
@@ -215,7 +214,7 @@
                 cancelButton: '否',
                 closeIcon: true,
                 confirm: function () {
-                    var addr = "/transport/area_statistics?" + "slng=" + sw.lng + "&slat=" + sw.lat + "&elng=" + ne.lng + "&elat=" + ne.lat + "&data_type=1";
+                    var addr = "/transport/area_statistics?" + "slng=" + sw.lng + "&slat=" + sw.lat + "&elng=" + ne.lng + "&elat=" + ne.lat + "&data_type=1&point_type={{ data_type }}";
                     $.get(addr, function (result) {
                         if (result.code == 0) {
                             handle_result_from_json(result);

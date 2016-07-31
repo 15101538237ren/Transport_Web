@@ -1,5 +1,5 @@
 # coding: utf-8
-import os,json,datetime,math
+import os,json,datetime,math,re
 from Transport_Web.settings import BASE_DIR
 from os.path import normpath,join
 OPTION_ROOT_DIR=normpath(join(BASE_DIR,'static','option'))
@@ -24,21 +24,45 @@ def generate_option_template(title=True,tooltip=True,dataZoom=True,legend=True,t
     if series:
         option["series"]={}
     return option
-def put_data_into_json(option_arg,title="title",dataZoomDictList=[],legend_names=[],xAxisData=[],yAxisDictList=[],seriesDictList=[]):
+def put_data_into_json(option_arg,out_file_path,title="title",legend_names=[],xAxisData=[],seriesDictList=[]):
     option=option_arg
-    option["title"]={"text": title,"x":"center"}
-    option["legend"]={"data":legend_names,"x": "left"}
-    option["xAxis"]=[{"type" : 'category',"boundaryGap" : False,"data":xAxisData}]
-    option["dataZoom"]=dataZoomDictList
-    option["yAxis"]=yAxisDictList
+    option["title"]["text"]=title
+    option["legend"]["data"]=legend_names
+    option["xAxis"][0]["data"]=xAxisData
     option["series"]=seriesDictList
 
-    option_file=open(OPTION_ROOT_DIR+os.sep+"option1.json","w")
+    option_file=open(out_file_path,"w")
     print ("now writing option file")
     option_str=json.dumps(option, sort_keys=True, indent=4)
     option_file.write(option_str)
     option_file.close()
     print ("option file writed!")
+def get_json_template_from(file_path):
+    fp=open(file_path,"r")
+    json_str = json.loads(json.dumps(fp.read()))
+    json_obj = json.loads(json_str)
+    fp.close()
+    return json_obj
+def generate_series_dict(point_type,legend_names,data_type_list,type_of_series,**series_dict):
+    ret_arr=[]
+    #单个的情况
+    if point_type!=0:
+        for i in range(len(legend_names)):
+            item={}
+            item["name"]=legend_names[i]
+            item["type"]=type_of_series
+            item["data"]=series_dict["type"+str(point_type)][data_type_list[i]]
+            ret_arr.append(item)
+    else:
+        for i in range(1,5):
+            for j in range(2):
+                idx=2*i+j-2
+                item={}
+                item["name"]=legend_names[idx]
+                item["type"]=type_of_series
+                item["data"]=series_dict["type"+str(i)][data_type_list[j]]
+                ret_arr.append(item)
+    return ret_arr
 if __name__ == '__main__':
     option=generate_option_template(title=True,tooltip=False,dataZoom=True,legend=True,toolbox=True,grid=True,xAxis=True,yAxis=True,series=True)
 

@@ -8,10 +8,14 @@ from Transport_Web.settings import STATIC_ROOT
 from django.views.decorators.http import require_GET, require_POST
 from transport.direction import *
 import pytz
-from transport.json_handler import generate_option_template,put_data_into_json
+from transport.json_handler import get_json_template_from,OPTION_ROOT_DIR,put_data_into_json,generate_series_dict
 from operator import itemgetter, attrgetter
 # Create your views here.
 
+DATA_TYPE_DICT = {0:"全部类型数据",1:"应急车道",2:"违反指示标线",3:"非机动车道",4:"公交车道"}
+LEGEND_NAMES=["顺时针道路","逆时针道路"]
+LEGEND_NAMES_SHORT=["顺","逆"]
+DATA_TYPE_LIST=["posNum","negNum"]
 IN_RECTANGLE_AREA = 0
 IN_POLYGON_AREA = 1
 
@@ -66,19 +70,31 @@ def area_statistics(request):
     type_index_list = []
     if(point_type == 0):
         tmp_table_arr = table_arr
-        type_index_list = [range(1,len(table_arr)+1)]
+        type_index_list = range(1,len(table_arr)+1)
     else:
         tmp_table_arr.append(table_arr[point_type - 1])
         type_index_list = [point_type]
     points_info_dict = get_points_in_region(tmp_table_arr, type_index_list, area_points_list, border_list, area_type, data_type)
 
     data_points_json = json.dumps(points_info_dict, sort_keys=True, indent=4)
-    option=generate_option_template(title=True,tooltip=False,dataZoom=True,legend=True,toolbox=False,grid=False,xAxis=True,yAxis=True,series=True)
 
-    option_json = json.dumps(option, sort_keys=True, indent=4)
-    put_data_into_json(option,title="应急车道",legend_names=["顺时针","逆时针"],dataZoomDictList=[{"show": True,"realtime": True,"start": 65,"end": 85},{"type": "inside","realtime": True,"start": 65,"end": 85}],xAxisData=points_info_dict["type1"]["datatime"],yAxisDictList={"type": 'value'},seriesDictList= [{"name":"顺时针",
-                                                                                                                                                                        "type":"line","data":points_info_dict["type1"]["posNum"]},{"name":"逆时针",
-                                                                                                                                                                        "type":"line","data":points_info_dict["type1"]["negNum"]}])
+    option_origin_path=OPTION_ROOT_DIR+os.sep+"option1_origin.json"
+    option=get_json_template_from(option_origin_path)
+    out_option_file_path=OPTION_ROOT_DIR+os.sep+"option1.json"
+    data_type_name=DATA_TYPE_DICT[point_type]
+    title_name=data_type_name+"举报量与时间的关系"
+    if point_type==0:
+        datelist_data=points_info_dict["date_list"]
+        legend_names=[]
+        for i_tmp in range(1,5):
+            for j_tmp in range(len(LEGEND_NAMES)):
+                tmp_str=DATA_TYPE_DICT[i_tmp]+"_"+LEGEND_NAMES_SHORT[j_tmp]
+                legend_names.append(tmp_str)
+    else:
+        datelist_data=points_info_dict["type"+str(point_type)]["datatime"]
+        legend_names=LEGEND_NAMES
+    seriesDictList=generate_series_dict(point_type,legend_names,DATA_TYPE_LIST,"line",**points_info_dict)
+    put_data_into_json(option,out_option_file_path,title=title_name,legend_names=legend_names,xAxisData=datelist_data,seriesDictList=seriesDictList)
     print(data_points_json)
     addr='/static/option/option1.json'
     return success_response(addr)
@@ -325,17 +341,33 @@ def get_points_in_region(table_arr,type_index_list,area_points_list,border_list,
         points_info_dict['statistic']['type' + str(type_index_list[i]) ] = stat_dict
 
     day_list = sorted(day_list)
-    day_list.pop(0)
+    for i in range(len(day_list)):
+        day_info =day_list[i]
+        str_day = str(day_info[0]) +str(day_info[1]) +str(day_info[2])
+        day_dict[str_day] = i
     day_list_len = len(day_list)
     for i in range(day_list_len):
         day = day_list[i]
         day_list[i] = [day[0], day[1], day[2], 0]
+
+    for i in range(table_arr_length):
+        table = points_info_dict['type' + str(type_index_list[i])]
+        data_time_list = table[0]['datatime']
+        str_day = str(data_time_list[0])+str(data_time_list[1]) + str(data_time_list[2])
+        day_index = day_dict.get(str_day,0)
+        for j in range(day_index):
+            for k in range(24):  #插入24小时空余数据
+                day_info = day_list[j]
+                tmp_day_dict = {'datatime':(day_info[0],day_info[1],day_info[2],k),'posNum':0,'negNum':0}
+                table.insert(j*24+k, tmp_day_dict)
+
 
     '''max_index = len(day_list) - 1
     date_day = day_list[max_index]
     date_last_day = datetime.datetime(date_day[0], date_day[1], date_day[2], 0)
     date_last_day = date_last_day + datetime.timedelta(days = 1)
     day_list.append([date_last_day.year, date_last_day.month, date_last_day.day, 0])'''
+
 
 
     tmp_list = []
@@ -353,24 +385,34 @@ def get_points_in_region(table_arr,type_index_list,area_points_list,border_list,
     t_h = time_min.hour
     date_min = date_hour_min.date()
     date_time_min = datetime.datetime(date_min.year, date_min.month, date_min.day, t_h, 0, 0)
+    date_dict, date_info_num = {}, 0
+
     for hour in range(hours+1):
         datetmp = date_time_min + datetime.timedelta(hours=hour)
-        date_list.append(str(datetmp.hour) + ':' + str(0) + '\n' + str(datetmp.month) + '/' + str(datetmp.day))
+        #str_date_info = str(datetmp.hour) + ':' + str(0) + '\n' + str(datetmp.month) + '/' + str(datetmp.day)
+        str_date_info = str(datetmp.month) + '/' + str(datetmp.day) + '\n' + str(datetmp.hour) + ':00';
+        date_list.append(str_date_info)
+        date_dict[str_date_info] = date_info_num
+        date_info_num += 1
+    #points_info_dict = convert_points_info(points_info_dict, table_arr_length)
+
+    points_info_dict = get_three_list(points_info_dict, date_list, date_dict, type_index_list)
 
     points_info_dict['day_list'] = day_list
     points_info_dict['max_num'] = max_num
-    #points_info_dict['date_list'] = date_list
-    #points_info_dict = convert_points_info(points_info_dict, table_arr_length)
 
-    points_info_dict = get_three_list(points_info_dict,type_index_list)
+    points_info_dict['date_list'] = date_list
 
     return points_info_dict
 
 
-def addEntityToList(dict1,key,dict2,def_type):
-    dict1[key].append(dict2.get(key,def_type))
+def addEntityToList(dict1,key,date_index,dict2,def_type):
+    if(date_index + 1 > len(dict1[key])):
+        for i in range(max(0,len(dict1[key])-1),date_index+1):
+            dict1[key].append(def_type)
+    dict1[key][date_index] = dict2.get(key,def_type)
 
-def get_three_list(point_dict,type_index_list):
+def get_three_list(point_dict, date_list, date_dict, type_index_list):
     point_info_dict = {}
     for i in type_index_list:
         table = point_dict['type' + str(i)]
@@ -379,9 +421,20 @@ def get_three_list(point_dict,type_index_list):
         for j in range(table_len):
             tmplist = table[j]['datatime']
             table[j]['datatime'] = str(tmplist[1]) + '/' + str(tmplist[2]) + '\n' + str(tmplist[3]) + ':00'
-            addEntityToList(table_info_dict, 'datatime', table[j], [])
-            addEntityToList(table_info_dict, 'posNum', table[j], 0)
-            addEntityToList(table_info_dict, 'negNum', table[j], 0)
+            date_index = date_dict.get(table[j]['datatime'], -1)
+            if(date_index != -1):
+                addEntityToList(table_info_dict, 'datatime', date_index, table[j], [])
+                addEntityToList(table_info_dict, 'posNum', date_index, table[j], 0)
+                addEntityToList(table_info_dict, 'negNum', date_index, table[j], 0)
+        j = 0
+        while(j< len(table_info_dict['datatime']) and len(table_info_dict['datatime'][j]) == 0):
+            j += 1
+
+        for k in range(j):
+            table_info_dict['datatime'].pop(0)
+            table_info_dict['posNum'].pop(0)
+            table_info_dict['negNum'].pop(0)
+
         point_info_dict['type' + str(i)] = table_info_dict
     return point_info_dict
 
@@ -464,7 +517,6 @@ def showpath(request):
         static_theme_url.append('/static/theme/'+theme_name)
         theme_names.append(theme_name)
     selected_index=5
-    title="举报量与时间的关系"
     data_type=int(request.GET.get("data_type",0))
     if split_show==1:
         return render(request, 'transport/diffcolor_split.html',locals())
