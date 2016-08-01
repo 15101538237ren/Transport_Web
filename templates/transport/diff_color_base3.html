@@ -39,7 +39,7 @@
 {% block endscript %}
 {% endblock %}
 <script type="text/javascript" >
-    function area_selection(appendix)
+    function area_selection(appendix,overlays_tmp)
     {
         $.confirm({
                         confirmButtonClass: 'btn-info',
@@ -62,14 +62,16 @@
                                     alert(result.message);
                                 }
                             });
-                            for(var l=0;l<overlays_to_rm.length;l++)
+                            for(var l=0;l<overlays_tmp.length;l++)
                             {
-                                map.removeOverlay(overlays_to_rm[l]);
-                                overlays_to_rm=[];
+                                map.removeOverlay(overlays_tmp[l]);
                             }
                         },
                         cancel: function () {
-                            map.removeOverlay(e.overlay);
+                           for(var l=0;l<overlays_tmp.length;l++)
+                            {
+                                map.removeOverlay(overlays_tmp[l]);
+                            }
                         }
                     });
     }
@@ -189,7 +191,8 @@
                 {
                     var point_list_json_str="&point_list="+JSON.stringify(line_points);
                     overlays_to_rm.push(now_overlay);
-                    area_selection(point_list_json_str);
+                    area_selection(point_list_json_str,overlays_to_rm);
+                    overlays_to_rm=[];
                 }
                 else if (corr_step_now!=1)
                 {
@@ -205,7 +208,7 @@
                     overlays_to_rm.push(now_overlay);
                     corr_data_str=corr_data_str+'&second='+JSON.stringify(line_points);
                     corr_data_str=corr_data_str+'&corr_types='+corr_types.join(",");
-                    area_selection(corr_data_str);
+                    area_selection(corr_data_str,overlays_to_rm);
 
                     corr_step_now=0;
                     corr_data_str='';
@@ -254,7 +257,8 @@
                 //单独区域
                 var rect_point_list_str="&point_list="+now_point_lst;
                 overlays_to_rm.push(now_overlay);
-                area_selection(rect_point_list_str);
+                area_selection(rect_point_list_str,overlays_to_rm);
+                overlays_to_rm=[];
             }
             else if (corr_step_now!=1)
             {
@@ -270,7 +274,7 @@
                 overlays_to_rm.push(now_overlay);
                 corr_data_str=corr_data_str+'&second='+now_point_lst;
                 corr_data_str=corr_data_str+'&corr_types='+corr_types.join(",");
-                area_selection(corr_data_str);
+                area_selection(corr_data_str,overlays_to_rm);
 
                 corr_step_now=0;
                 corr_data_str='';

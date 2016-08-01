@@ -8,17 +8,11 @@ from Transport_Web.settings import STATIC_ROOT
 from django.views.decorators.http import require_GET, require_POST
 from transport.direction import *
 import pytz
-from transport.json_handler import get_json_template_from,OPTION_ROOT_DIR,put_data_into_json,generate_series_dict
+from transport.json_handler import generate_option
 from operator import itemgetter, attrgetter
-# Create your views here.
-
-DATA_TYPE_DICT = {0:"全部类型数据",1:"应急车道",2:"违反指示标线",3:"非机动车道",4:"公交车道"}
-LEGEND_NAMES=["顺时针道路","逆时针道路"]
-LEGEND_NAMES_SHORT=["顺","逆"]
-DATA_TYPE_LIST=["posNum","negNum"]
 IN_RECTANGLE_AREA = 0
 IN_POLYGON_AREA = 1
-
+# Create your views here.
 def index(request):
     roads_set,roads_directions=get_all_paths()
     polyline_js_code=poly_line_js(roads_set,roads_directions)
@@ -42,64 +36,171 @@ def region(request):
 def area_statistics(request):
     data_type = int(request.GET.get('data_type', -1))
     point_type = int(request.GET.get('point_type', 1))  #0:全部，1:应急车道，2，3，4...
-
-    corr_types=request.GET.get('corr_types',-3)
+    corr_types = request.GET.get('corr_types',-3)
 
     #单独的区域进行分析
-    if corr_types==-3:
-        area_points_list, border_list = [], []
-
-        minX, maxX, minY, maxY = MAXINT, 0, MAXINT, 0
-
-        area_list_str = request.GET.get('point_list',-2)
-        area_list = json.loads(area_list_str)
-        for point in area_list:
-            minX, maxX, minY, maxY = min(minX, point['lng']), max(maxX, point['lng']), min(minY, point['lat']), max(maxY, point['lat'])
-            area_points_list.append([point['lng'], point['lat']])
-        border_list = [minX, maxX, minY, maxY]
-        if len(area_list)>2:
-            area_type = IN_POLYGON_AREA
-
-        elif len(area_list)==2:
-            area_type = IN_RECTANGLE_AREA
+    if corr_types == -3:
+        area_list_str = request.GET.get('point_list', -2)
+        points_info_dict = single_area_statistic(area_list_str, point_type, data_type)
+        data_points_json = json.dumps(points_info_dict, sort_keys=True, indent=4)
+        generate_option(point_type, **points_info_dict)
+        print(data_points_json)
+        addr = '/static/option/option1.json'
+        return success_response(addr)
     else: #两个区域进行分析
-        #corr_types =
+        corr_types = corr_types.split(',')
         first_point_list = str(request.GET.get('first', ''))
         second_point_list = str(request.GET.get('second', ''))  #0:全部，1:应急车道，2，3，4...
-    table_arr=load_pickle_from(STATIC_ROOT + os.sep + 'labeledpoints.pkl')
+        area_points_list = [first_point_list, second_point_list]
 
+        points_info_list = multi_area_statistic(area_points_list, point_type, data_type)
+        #下面是将要进行相关性分析的序列长度变成相同的
+        typemin,typemax = 1,1
+        if(point_type ==0):
+            typemin,typemax = 1,4
+        else:
+            typemin,typemax = point_type,point_type
+
+        corr_list = []
+        # 如果只有一种违章type，外层i的循环相当于只进行一次
+        for i in range(typemin,typemax+1):
+
+            [pos_list1,pos_list2,neg_list1,neg_list2] = get_equal_length_lists(points_info_list,i)
+            #下面是相关性分析的计算
+            corr_list.append(calc_corr(pos_list1,pos_list2,neg_list1,neg_list2))
+
+        data_points_json = json.dumps(points_info_list, indent=4)
+        #print(data_points_json)
+        addr = '/static/option/option1.json'
+        response_info = {'addr':addr,'corr':corr_list}
+        return success_response(response_info)
+
+#将两个序列的长度变成相同的
+def get_equal_length_lists(points_info_list,i):
+    date_list1 = points_info_list[0]['date_list']
+    datatime_list1 = points_info_list[0]['type' + str(i)]['datatime']
+    pos_list1 = points_info_list[0]['type' + str(i)]['posNum']
+    neg_list1 = points_info_list[0]['type' + str(i)]['negNum']
+    date_list2 = points_info_list[1]['date_list']
+    datatime_list2 = points_info_list[1]['type' + str(i)]['datatime']
+    pos_list2 = points_info_list[1]['type' + str(i)]['posNum']
+    neg_list2 = points_info_list[1]['type' + str(i)]['negNum']
+    if (date_list1[0] < date_list2[0]):
+        index = 0
+        while (index < len(date_list1) and date_list1[index] != date_list2[0]):
+            index += 1
+        for j in range(index):
+            date_list2.insert(j, date_list1[j])
+            datatime_list2.insert(j, date_list1[j])
+            pos_list2.insert(j, 0)
+            neg_list2.insert(j, 0)
+    else:
+        index = 0
+        while (index < len(date_list2) and date_list2[index] != date_list1[0]):
+            index += 1
+        for j in range(index):
+            date_list1.insert(j, date_list2[j])
+            datatime_list1.insert(j, date_list2[j])
+            pos_list1.insert(j, 0)
+            neg_list1.insert(j, 0)
+    if (date_list1[len(date_list1) - 1] < date_list2[len(date_list2) - 1]):
+        index = len(date_list2) - 1
+        while (index >= 0 and date_list2[index] != date_list1[len(date_list1) - 1]):
+            index -= 1
+        for j in range(index + 1, len(date_list2)):
+            date_list1.append(date_list2[j])
+            datatime_list1.insert(j, date_list2[j])
+            pos_list1.append(0)
+            neg_list1.append(0)
+    else:
+        index = len(date_list1) - 1
+        while (index >= 0 and date_list1[index] != date_list2[len(date_list2) - 1]):
+            index -= 1
+        for j in range(index + 1, len(date_list1)):
+            date_list2.append(date_list1[j])
+            datatime_list2.insert(j, date_list1[j])
+            pos_list2.append(0)
+            neg_list2.append(0)
+    return [pos_list1,pos_list2,neg_list1,neg_list2]
+
+#计算相关性的值
+def calc_corr(pos_list1,pos_list2,neg_list1,neg_list2):
+    pos_list1_avg, neg_list1_avg, pos_list2_avg, neg_list2_avg = 0.0, 0.0, 0.0, 0.0
+    for j in range(len(pos_list1)):
+        pos_list1_avg += pos_list1[j]
+        pos_list2_avg += pos_list2[j]
+        neg_list1_avg += neg_list1[j]
+        neg_list2_avg += neg_list2[j]
+    pos_list1_avg /= len(pos_list1)
+    pos_list2_avg /= len(pos_list1)
+    neg_list1_avg /= len(pos_list1)
+    neg_list2_avg /= len(pos_list1)
+    sum_pos_xy, sum_neg_xy, sum_pos_x2, sum_pos_y2, sum_neg_x2, sum_neg_y2 = 0, 0, 0, 0, 0, 0
+    for j in range(len(pos_list1)):
+        sum_pos_xy += (pos_list1[j] - pos_list1_avg) * (pos_list2[j] - pos_list2_avg)
+        sum_pos_x2 += pow(pos_list1[j] - pos_list1_avg, 2)
+        sum_pos_y2 += pow(pos_list2[j] - pos_list2_avg, 2)
+        sum_neg_xy += (neg_list1[j] - neg_list1_avg) * (neg_list2[j] - neg_list2_avg)
+        sum_neg_x2 += pow(neg_list1[j] - neg_list1_avg, 2)
+        sum_neg_y2 += pow(neg_list2[j] - neg_list2_avg, 2)
+    r_pos_xy = sum_pos_xy / math.sqrt(sum_pos_x2 * sum_pos_y2)
+    r_neg_xy = sum_neg_xy / math.sqrt(sum_neg_x2 * sum_pos_y2)
+    return [r_pos_xy,r_neg_xy]
+
+#返回table_arr的list和对应的type_list
+def get_table_from_type(point_type):
+    table_arr = load_pickle_from(STATIC_ROOT + os.sep + 'labeledpoints.pkl')
     tmp_table_arr = []
     type_index_list = []
-    if(point_type == 0):
+    if (point_type == 0):
         tmp_table_arr = table_arr
-        type_index_list = range(1,len(table_arr)+1)
+        type_index_list = range(1, len(table_arr) + 1)
     else:
         tmp_table_arr.append(table_arr[point_type - 1])
         type_index_list = [point_type]
+    return [tmp_table_arr, type_index_list]
+
+def single_area_statistic(area_list_str, point_type, data_type):
+    area_points_list, border_list = [], []
+    minX, maxX, minY, maxY = MAXINT, 0, MAXINT, 0
+    area_list = json.loads(area_list_str)
+    for point in area_list:
+        minX, maxX, minY, maxY = min(minX, point['lng']), max(maxX, point['lng']), min(minY, point['lat']), max(maxY, point['lat'])
+        area_points_list.append([point['lng'], point['lat']])
+    border_list = [minX, maxX, minY, maxY]
+    if len(area_list) > 2:
+        area_type = IN_POLYGON_AREA
+    elif len(area_list) == 2:
+        area_type = IN_RECTANGLE_AREA
+
+    [tmp_table_arr, type_index_list] = get_table_from_type(point_type)
+
     points_info_dict = get_points_in_region(tmp_table_arr, type_index_list, area_points_list, border_list, area_type, data_type)
 
-    data_points_json = json.dumps(points_info_dict, sort_keys=True, indent=4)
+    return points_info_dict
 
-    option_origin_path=OPTION_ROOT_DIR+os.sep+"option1_origin.json"
-    option=get_json_template_from(option_origin_path)
-    out_option_file_path=OPTION_ROOT_DIR+os.sep+"option1.json"
-    data_type_name=DATA_TYPE_DICT[point_type]
-    title_name=data_type_name+"举报量与时间的关系"
-    if point_type==0:
-        datelist_data=points_info_dict["date_list"]
-        legend_names=[]
-        for i_tmp in range(1,5):
-            for j_tmp in range(len(LEGEND_NAMES)):
-                tmp_str=DATA_TYPE_DICT[i_tmp]+"_"+LEGEND_NAMES_SHORT[j_tmp]
-                legend_names.append(tmp_str)
-    else:
-        datelist_data=points_info_dict["type"+str(point_type)]["datatime"]
-        legend_names=LEGEND_NAMES
-    seriesDictList=generate_series_dict(point_type,legend_names,DATA_TYPE_LIST,"line",datelist_data,**points_info_dict)
-    put_data_into_json(option,out_option_file_path,title=title_name,legend_names=legend_names,xAxisData=datelist_data,seriesDictList=seriesDictList)
-    print(data_points_json)
-    addr='/static/option/option1.json'
-    return success_response(addr)
+def multi_area_statistic(area_points_list, point_type, data_type):
+
+    points_info_list = []
+    for area_list_str in area_points_list:   #遍历每一个区域的坐标点
+        area_list = json.loads(area_list_str)
+        single_points_list, border_list = [], []
+        minX, maxX, minY, maxY = MAXINT, 0, MAXINT, 0
+        for point in area_list:
+            minX, maxX, minY, maxY = min(minX, point['lng']), max(maxX, point['lng']), min(minY, point['lat']), max(maxY, point['lat'])
+            single_points_list.append([point['lng'], point['lat']])
+        border_list = [minX, maxX, minY, maxY]
+        if len(area_list) > 2:
+            area_type = IN_POLYGON_AREA
+        elif len(area_list) == 2:
+            area_type = IN_RECTANGLE_AREA
+
+        [tmp_table_arr, type_index_list] = get_table_from_type(point_type)
+        points_info_dict = get_points_in_region(tmp_table_arr, type_index_list, single_points_list, border_list, area_type, data_type)
+        points_info_list.append(points_info_dict)
+
+    return points_info_list
+
 
 #判断点是否在矩形边界区域内
 def is_in_border(border_list, point):
@@ -392,13 +493,13 @@ def get_points_in_region(table_arr,type_index_list,area_points_list,border_list,
     for hour in range(hours+1):
         datetmp = date_time_min + datetime.timedelta(hours=hour)
         #str_date_info = str(datetmp.hour) + ':' + str(0) + '\n' + str(datetmp.month) + '/' + str(datetmp.day)
-        str_date_info = str(datetmp.month) + '/' + str(datetmp.day) + '\n' + str(datetmp.hour) + ':00';
+        str_date_info = str(datetmp.month) + '/' + str(datetmp.day) + '\n' + str(datetmp.hour) + ':00'
         date_list.append(str_date_info)
         date_dict[str_date_info] = date_info_num
         date_info_num += 1
     #points_info_dict = convert_points_info(points_info_dict, table_arr_length)
 
-    points_info_dict = get_three_list(points_info_dict, date_list, date_dict, type_index_list)
+    points_info_dict = get_three_list(points_info_dict, date_dict, type_index_list)
 
     points_info_dict['day_list'] = day_list
     points_info_dict['max_num'] = max_num
@@ -412,9 +513,11 @@ def addEntityToList(dict1,key,date_index,dict2,def_type):
     if(date_index + 1 > len(dict1[key])):
         for i in range(max(0,len(dict1[key])-1),date_index+1):
             dict1[key].append(def_type)
+    if(def_type!=0 and dict2.get(key,def_type) == def_type):
+        print('YES')
     dict1[key][date_index] = dict2.get(key,def_type)
 
-def get_three_list(point_dict, date_list, date_dict, type_index_list):
+def get_three_list(point_dict, date_dict, type_index_list):
     point_info_dict = {}
     for i in type_index_list:
         table = point_dict['type' + str(i)]

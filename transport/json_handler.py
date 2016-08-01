@@ -2,6 +2,10 @@
 import os,json,datetime,math,re
 from Transport_Web.settings import BASE_DIR
 from os.path import normpath,join
+DATA_TYPE_DICT = {0:"全部类型数据",1:"应急车道",2:"违反指示标线",3:"非机动车道",4:"公交车道"}
+LEGEND_NAMES=["顺时针道路","逆时针道路"]
+LEGEND_NAMES_SHORT=["顺","逆"]
+DATA_TYPE_LIST=["posNum","negNum"]
 OPTION_ROOT_DIR=normpath(join(BASE_DIR,'static','option'))
 def generate_option_template(title=True,tooltip=True,dataZoom=True,legend=True,toolbox=True,grid=True,xAxis=True,yAxis=True,series=True):
     option={}
@@ -68,6 +72,26 @@ def generate_series_dict(point_type,legend_names,data_type_list,type_of_series,d
                 item["data"]=series_dict["type"+str(i)][data_type_list[j]]
                 ret_arr.append(item)
     return ret_arr
+def generate_option(point_type,**points_info_dict):
+    option_origin_path = OPTION_ROOT_DIR + os.sep + "option1_origin.json"
+    option = get_json_template_from(option_origin_path)
+    out_option_file_path = OPTION_ROOT_DIR + os.sep + "option1.json"
+    data_type_name = DATA_TYPE_DICT[point_type]
+    title_name = data_type_name + "举报量与时间的关系"
+    if point_type == 0:
+        datelist_data = points_info_dict["date_list"]
+        legend_names = []
+        for i_tmp in range(1, 5):
+            for j_tmp in range(len(LEGEND_NAMES)):
+                tmp_str = DATA_TYPE_DICT[i_tmp] + "_" + LEGEND_NAMES_SHORT[j_tmp]
+                legend_names.append(tmp_str)
+    else:
+        datelist_data = points_info_dict["type" + str(point_type)]["datatime"]
+        legend_names = LEGEND_NAMES
+    seriesDictList = generate_series_dict(point_type, legend_names, DATA_TYPE_LIST, "line", datelist_data,
+                                          **points_info_dict)
+    put_data_into_json(option, out_option_file_path, title=title_name, legend_names=legend_names,
+                       xAxisData=datelist_data, seriesDictList=seriesDictList)
 if __name__ == '__main__':
     option=generate_option_template(title=True,tooltip=False,dataZoom=True,legend=True,toolbox=True,grid=True,xAxis=True,yAxis=True,series=True)
 
