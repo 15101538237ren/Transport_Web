@@ -8,6 +8,12 @@
         <script type="text/javascript" src="{% static "output/pathpoints.js" %}"></script>
     {% endifequal %}
     {% block headscript %}
+        <script>
+        var corr_step_now=-1;
+        var corr_data_str='';
+        var corr_types=[];
+        var overlays_to_rm=[];
+        </script>
     {% endblock %}
 {% endblock %}
 {% block content %}
@@ -33,6 +39,40 @@
 {% block endscript %}
 {% endblock %}
 <script type="text/javascript" >
+    function area_selection(appendix)
+    {
+        $.confirm({
+                        confirmButtonClass: 'btn-info',
+                        cancelButtonClass: 'btn-danger',
+
+                        keyboardEnabled: true,
+                        title: '信息',
+                        content: '是否选择当前区域中的数据点?',
+                        confirmButton: '是',
+                        cancelButton: '否',
+                        closeIcon: true,
+                        confirm: function () {
+
+                            var addr = "/transport/area_statistics?"+"data_type=1&point_type={{ data_type }}"+appendix;
+                            $.get(addr, function (result) {
+                                if (result.code == 0) {
+                                    handle_result_from_json(result);
+                                }
+                                else {
+                                    alert(result.message);
+                                }
+                            });
+                            for(var l=0;l<overlays_to_rm.length;l++)
+                            {
+                                map.removeOverlay(overlays_to_rm[l]);
+                                overlays_to_rm=[];
+                            }
+                        },
+                        cancel: function () {
+                            map.removeOverlay(e.overlay);
+                        }
+                    });
+    }
     //百度地图相关代码
     var myModal=$('#myModal');
     var mapDiv=$("#map");
@@ -57,16 +97,22 @@
     // 在本方法中创建个div元素作为控件的容器,并将其添加到地图容器中
     CorrControl.prototype.initialize = function(map){
       // 创建一个DOM元素
+      //var div = $('<div class="btn-group" role="group"></div>');
+      //var btn=$('<button type="button" class="btn btn-default">1</button>');
       var div = document.createElement("div");
-      // 添加文字说明
-      div.appendChild(document.createTextNode("相关性分析"));
-      // 设置样式
-      div.style.cursor = "pointer";
-      div.style.border = "1px solid gray";
-      div.style.backgroundColor = "white";
-      div.onclick = function(e){
-        alert("您单击了!");
+      div.setAttribute('class','btn-group');
+      div.setAttribute('role','group');
+      var btn = document.createElement("input");
+      btn.setAttribute('class','btn btn-success');
+      btn.type="button";
+      btn.value="相关性分析";
+      btn.onclick = function(e){
+        alert("请您分别选取两个区域!");
+        corr_step_now=0;
+        corr_data_str='';
       };
+      // 添加文字说明
+      div.appendChild(btn);
       // 添加DOM元素到地图中
       map.getContainer().appendChild(div);
       // 将DOM元素返回
@@ -139,35 +185,34 @@
             {
 
                 now_overlay= e.overlay;
-
-                $.confirm({
-                confirmButtonClass: 'btn-info',
-                cancelButtonClass: 'btn-danger',
-
-                keyboardEnabled: true,
-                title: '信息',
-                content: '是否选择当前区域中的数据点?',
-                confirmButton: '是',
-                cancelButton: '否',
-                closeIcon: true,
-                confirm: function () {
-                    var point_list_json_str=JSON.stringify(line_points);
-                    var addr = "/transport/area_statistics?" + "point_list="+point_list_json_str + "&data_type=1&point_type={{ data_type }}";
-                    $.get(addr, function (result) {
-                        if (result.code == 0) {
-                            handle_result_from_json(result);
-                            map.removeOverlay(e.overlay);
-                        }
-                        else {
-                            alert(result.message);
-                            map.removeOverlay(e.overlay);
-                        }
-                    });
-                },
-                cancel: function () {
-                    map.removeOverlay(e.overlay);
+                if (corr_step_now==-1)
+                {
+                    var point_list_json_str="&point_list="+JSON.stringify(line_points);
+                    overlays_to_rm.push(now_overlay);
+                    area_selection(point_list_json_str);
                 }
-            });
+                else if (corr_step_now!=1)
+                {
+                    //第一个区域的点.
+                    corr_step_now=1;
+                    corr_types.push('polyline');
+                    overlays_to_rm.push(now_overlay);
+                    corr_data_str='&first='+JSON.stringify(line_points);
+                }
+                else if (corr_step_now==1){
+                    //第二个区域的点.
+                    corr_types.push('polyline');
+                    overlays_to_rm.push(now_overlay);
+                    corr_data_str=corr_data_str+'&second='+JSON.stringify(line_points);
+                    corr_data_str=corr_data_str+'&corr_types='+corr_types.join(",");
+                    area_selection(corr_data_str);
+
+                    corr_step_now=0;
+                    corr_data_str='';
+                    corr_types=[];
+                    overlays_to_rm=[];
+                }
+
             }
             else {
                 $.confirm({
@@ -202,34 +247,36 @@
             var sw = olRectPoint[0];		//左上
             var ne = olRectPoint[2];		//右下
             //alert('左上：'+ sw.lng+',' + sw.lat + '    右下：'+ne.lng+','+ne.lat);
+            var now_point_lst=JSON.stringify([sw,ne]);
+            now_overlay= e.overlay;
+            if (corr_step_now==-1)
+            {
+                //单独区域
+                var rect_point_list_str="&point_list="+now_point_lst;
+                overlays_to_rm.push(now_overlay);
+                area_selection(rect_point_list_str);
+            }
+            else if (corr_step_now!=1)
+            {
+                //第一个区域的点.
+                corr_step_now=1;
+                corr_types.push('rect');
+                overlays_to_rm.push(now_overlay);
+                corr_data_str='&first='+now_point_lst;
+            }
+            else if (corr_step_now==1){
+                //第二个区域的点.
+                corr_types.push('rect');
+                overlays_to_rm.push(now_overlay);
+                corr_data_str=corr_data_str+'&second='+now_point_lst;
+                corr_data_str=corr_data_str+'&corr_types='+corr_types.join(",");
+                area_selection(corr_data_str);
 
-            $.confirm({
-                confirmButtonClass: 'btn-info',
-                cancelButtonClass: 'btn-danger',
-
-                keyboardEnabled: true,
-                title: '信息',
-                content: '是否选择当前区域中的数据点?',
-                confirmButton: '是',
-                cancelButton: '否',
-                closeIcon: true,
-                confirm: function () {
-                    var addr = "/transport/area_statistics?" + "slng=" + sw.lng + "&slat=" + sw.lat + "&elng=" + ne.lng + "&elat=" + ne.lat + "&data_type=1&point_type={{ data_type }}";
-                    $.get(addr, function (result) {
-                        if (result.code == 0) {
-                            handle_result_from_json(result);
-                            map.removeOverlay(e.overlay);
-                        }
-                        else {
-                            alert(result.message);
-                            map.removeOverlay(e.overlay);
-                        }
-                    });
-                },
-                cancel: function () {
-                    map.removeOverlay(e.overlay);
-                }
-            });
+                corr_step_now=0;
+                corr_data_str='';
+                corr_types=[];
+                overlays_to_rm=[];
+            }
         }
     };
     var styleOptions = {

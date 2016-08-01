@@ -159,7 +159,7 @@
                 <li class="dropdown">
                   <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">点标注结果 <span class="caret"></span></a>
                   <ul class="dropdown-menu">
-                    <li><a href="{% url 'transport:showpath' %}">所有点</a></li>
+                    <li><a href="{% url 'transport:showpath' %}?noise_invisible=0&data_type=0">所有点</a></li>
                     <li><a href="{% url 'transport:showpath' %}?noise_invisible=1&data_type=0">所有点(仅标注点)</a></li>
                     <li role="separator" class="divider"></li>
                     <li><a href="{% url 'transport:showpath' %}?noise_invisible=1&data_type=1">应急车道点标注</a></li>

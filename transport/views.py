@@ -25,7 +25,7 @@ def index(request):
     clockwise=direction(1,u"顺时针")
     anti_clockwise=direction(-1,u"逆时针")
     directions=[clockwise,anti_clockwise]
-    noise_invisible=1;
+    noise_invisible=1
     return render(request, 'transport/test.html',locals())
 def region(request):
     slat=float(request.GET.get("slat"))
@@ -40,30 +40,32 @@ def region(request):
     return success_response(str(len(data_points)))
 
 def area_statistics(request):
-
-    area_list_str = request.GET.get('point_list',-2)
     data_type = int(request.GET.get('data_type', -1))
     point_type = int(request.GET.get('point_type', 1))  #0:全部，1:应急车道，2，3，4...
-    area_points_list, border_list = [], []
-    area_type = IN_POLYGON_AREA
 
-    minX, maxX, minY, maxY = MAXINT, 0, MAXINT, 0
+    corr_types=request.GET.get('corr_types',-3)
 
-    if(area_list_str == -2):
-        slat = float(request.GET.get("slat", -1))
-        slng = float(request.GET.get("slng", -1))
-        elat = float(request.GET.get("elat", -1))
-        elng = float(request.GET.get("elng", -1))
-        area_points_list = [[slng,slat],[slng,elat],[elng,elat],[elng,slat]]
-        area_type = IN_RECTANGLE_AREA
-        minX, maxX, minY, maxY = slng, elng, elat, slat
-        border_list = [minX,maxX,minY,maxY]
-    else:
+    #单独的区域进行分析
+    if corr_types==-3:
+        area_points_list, border_list = [], []
+
+        minX, maxX, minY, maxY = MAXINT, 0, MAXINT, 0
+
+        area_list_str = request.GET.get('point_list',-2)
         area_list = json.loads(area_list_str)
         for point in area_list:
             minX, maxX, minY, maxY = min(minX, point['lng']), max(maxX, point['lng']), min(minY, point['lat']), max(maxY, point['lat'])
             area_points_list.append([point['lng'], point['lat']])
         border_list = [minX, maxX, minY, maxY]
+        if len(area_list)>2:
+            area_type = IN_POLYGON_AREA
+
+        elif len(area_list)==2:
+            area_type = IN_RECTANGLE_AREA
+    else:
+        corr_types=
+        first_point_ = str(request.GET.get('first', ''))
+        point_type = str(request.GET.get('second', ''))  #0:全部，1:应急车道，2，3，4...
     table_arr=load_pickle_from(STATIC_ROOT + os.sep + 'labeledpoints.pkl')
 
     tmp_table_arr = []
@@ -93,7 +95,7 @@ def area_statistics(request):
     else:
         datelist_data=points_info_dict["type"+str(point_type)]["datatime"]
         legend_names=LEGEND_NAMES
-    seriesDictList=generate_series_dict(point_type,legend_names,DATA_TYPE_LIST,"line",**points_info_dict)
+    seriesDictList=generate_series_dict(point_type,legend_names,DATA_TYPE_LIST,"line",datelist_data,**points_info_dict)
     put_data_into_json(option,out_option_file_path,title=title_name,legend_names=legend_names,xAxisData=datelist_data,seriesDictList=seriesDictList)
     print(data_points_json)
     addr='/static/option/option1.json'

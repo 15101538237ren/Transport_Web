@@ -43,15 +43,20 @@ def get_json_template_from(file_path):
     json_obj = json.loads(json_str)
     fp.close()
     return json_obj
-def generate_series_dict(point_type,legend_names,data_type_list,type_of_series,**series_dict):
+def generate_series_dict(point_type,legend_names,data_type_list,type_of_series,datelist_data,**series_dict):
     ret_arr=[]
     #单个的情况
+
     if point_type!=0:
+
         for i in range(len(legend_names)):
             item={}
             item["name"]=legend_names[i]
             item["type"]=type_of_series
             item["data"]=series_dict["type"+str(point_type)][data_type_list[i]]
+            mark_point={}
+            mark_point["data"]=[{"type": "max", "name": "最大值"}]
+            item["markPoint"]=mark_point
             ret_arr.append(item)
     else:
         for i in range(1,5):
