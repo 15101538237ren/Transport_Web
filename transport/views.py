@@ -62,10 +62,10 @@ def area_statistics(request):
 
         elif len(area_list)==2:
             area_type = IN_RECTANGLE_AREA
-    else:
-        corr_types=
-        first_point_ = str(request.GET.get('first', ''))
-        point_type = str(request.GET.get('second', ''))  #0:全部，1:应急车道，2，3，4...
+    else: #两个区域进行分析
+        #corr_types =
+        first_point_list = str(request.GET.get('first', ''))
+        second_point_list = str(request.GET.get('second', ''))  #0:全部，1:应急车道，2，3，4...
     table_arr=load_pickle_from(STATIC_ROOT + os.sep + 'labeledpoints.pkl')
 
     tmp_table_arr = []

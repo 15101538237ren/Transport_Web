@@ -7,13 +7,13 @@
     {% else %}
         <script type="text/javascript" src="{% static "output/pathpoints.js" %}"></script>
     {% endifequal %}
-    {% block headscript %}
-        <script>
+    <script>
         var corr_step_now=-1;
         var corr_data_str='';
         var corr_types=[];
         var overlays_to_rm=[];
-        </script>
+    </script>
+    {% block headscript %}
     {% endblock %}
 {% endblock %}
 {% block content %}
