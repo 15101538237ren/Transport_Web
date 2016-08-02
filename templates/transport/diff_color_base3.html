@@ -54,9 +54,8 @@
         reset_corr();
         corr_step_now=0;
     }
-    function area_selection(points_list,overlays_tmp,attr_name)
+    function area_selection(points_list,overlays_tmp)
     {
-        tmp_attr_name=attr_name;
         $.confirm({
                         confirmButtonClass: 'btn-info',
                         cancelButtonClass: 'btn-danger',
@@ -79,16 +78,14 @@
                             var json_points = JSON.stringify(points_list);
                             $.ajax({
                                 type: "POST",
-                                url: "/transport/area_statistics?"+"data_type=1&point_type={{ data_type }}",
-                                data: {tmp_attr_name: json_points},
+                                url: "/transport/area_statistics?"+"data_type=1&point_type={{ data_type }}&region_type="+tmp_attr_name,
+                                data: {point_list: json_points},
                                 success: function (result) {
                                     if (result.code == 0) {
                                     handle_result_from_json(result);
-                                    tmp_attr_name="";
                                 }
                                 else {
                                     alert(result.message);
-                                    tmp_attr_name="";
                                 }
                                 },
                                 error: function (jqXHR, textStatus, errorThrown) {
@@ -117,7 +114,8 @@
         if (corr_step_now==-1)//普通模式
         {
             overlays_to_rm.push(now_overlay);
-            area_selection(line_points,overlays_to_rm,"point_list");
+            tmp_attr_name="single";
+            area_selection(line_points,overlays_to_rm);
             overlays_to_rm=[];
         }
         else if (corr_step_now==-2)
@@ -133,7 +131,8 @@
     }
     function i_selected_done(div,corr_btn,selected_done,drop_ul)
     {
-        area_selection(line_points_list,overlays_to_rm,"region_points");
+        tmp_attr_name="multi";
+        area_selection(line_points_list,overlays_to_rm);
         reset_corr();
         div.removeChild(selected_done);
         div.appendChild(corr_btn);

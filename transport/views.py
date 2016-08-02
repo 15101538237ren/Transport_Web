@@ -36,10 +36,10 @@ def region(request):
 def area_statistics(request):
     data_type = int(request.GET.get('data_type', -1))
     point_type = int(request.GET.get('point_type', 1))  #0:全部，1:应急车道，2，3，4...
-    corr_types = request.GET.get('corr_types',-3)
-
+    type = request.GET.get('region_type','')
+    point_list = request.POST.get('point_list',-2)
     #单独的区域进行分析
-    if corr_types == -3:
+    if type == "single":
         area_list_str = request.GET.get('point_list', -2)
         points_info_dict = single_area_statistic(area_list_str, point_type, data_type)
         data_points_json = json.dumps(points_info_dict, sort_keys=True, indent=4)
@@ -47,11 +47,9 @@ def area_statistics(request):
         print(data_points_json)
         addr = '/static/option/option1.json'
         return success_response(addr)
-    else: #两个区域进行分析
-        corr_types = corr_types.split(',')
-        first_point_list = str(request.GET.get('first', ''))
-        second_point_list = str(request.GET.get('second', ''))  #0:全部，1:应急车道，2，3，4...
-        area_points_list = [first_point_list, second_point_list]
+    elif type=="multi": #两个区域进行分析
+
+        area_points_list = point_list
 
         points_info_list = multi_area_statistic(area_points_list, point_type, data_type)
         #下面是将要进行相关性分析的序列长度变成相同的
