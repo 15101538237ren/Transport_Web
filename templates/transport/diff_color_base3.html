@@ -27,8 +27,38 @@
         <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
       </div>
       <div class="modal-body" id="modal_body" style="width: 1000px;height:600px;">
-          {% block modalbody %}
-          {% endblock %}
+        <div id="echart_body" style="width: 1000px;height:600px;">
+        </div>
+        <div id="modal_inner" style="width: 400px;height:300px;">
+            <div class="form-group">
+                <label for="delay_time" class="control-label">时间延迟步长(小时):</label>
+                <select id="delay_time" class="form-control input-md" name="delay_time">
+                    {% for delay in delay_list %}
+                        {% ifequal forloop.counter 2 %}
+                            <option value="{{ delay }}" selected="selected">{{ delay }}</option>
+                        {% else %}
+                            <option value="{{ delay }}">{{ delay }}</option>
+                        {% endifequal %}
+                    {% endfor %}
+                </select>
+           </div>
+            <div class="form-group">
+                <label for="delay_cnt" class="control-label">计算延迟数量(次):</label>
+                <select id="delay_cnt" class="form-control input-md" name="delay_time">
+                    {% for delay_no in delay_times %}
+                        {% ifequal forloop.counter 1 %}
+                            <option value="{{ delay_no }}" selected="selected">{{ delay_no }}</option>
+                        {% else %}
+                            <option value="{{ delay_no }}">{{ delay_no }}</option>
+                        {% endifequal %}
+                    {% endfor %}
+                </select>
+           </div>
+            <div class="form-group">
+                <button onclick="delay_submit()" class="btn btn-success">确定</button>
+                <button onclick="cancel_delay_submit()" class="btn btn-default">取消</button>
+           </div>
+        </div>
       </div>
       <div class="modal-footer">
       </div>
@@ -53,6 +83,68 @@
         alert("请您依次选择区域,单击左上角[选好了]按钮完成多区域选取!");
         reset_corr();
         corr_step_now=0;
+    }
+    function time_delay(drop_ul)
+    {
+        drop_ul.style.visibility="hidden";
+        alert("请您选择要进行时滞相关分析的区域!");
+        reset_corr();
+        corr_step_now=-2;
+    }
+    function cancel_delay_submit()
+    {
+        myModal.modal('hide');
+        myModal.css("height", "600px");
+        myModal.css("weight", "1000px");
+        modal_dialog.css("height", "600px");
+        modal_dialog.css("weight", "1000px");
+        echart_body.css("height", "600px");
+        echart_body.css("weight", "1000px");
+        modal_inner.hide();
+    }
+    function delay_submit()
+    {
+        var del_time_selected=$("#delay_time option:selected");
+        var del_time=del_time_selected.text();
+
+        var del_cnt_selected=$("#delay_cnt option:selected");
+        var del_cnt=del_cnt_selected.text();
+        tmp_attr_name="delay";
+        var points_lst=line_points_list[0];
+        $.ajaxSetup({
+            dataType: "json",
+            beforeSend: function (xhr, settings) {
+                xhr.setRequestHeader("X-CSRFToken", '{{ csrf_token }}');
+            },
+        });
+
+        var json_points = JSON.stringify(points_lst);
+        $.ajax({
+            type: "POST",
+            url: "/transport/area_statistics?"+"data_type=1&point_type={{ data_type }}"+"&del_time="+del_time+"&del_cnt="+del_cnt+"&region_type="+tmp_attr_name,
+            data: {point_list: json_points},
+            success: function (result) {
+                if (result.code == 0) {
+                handle_result_from_json(result);
+            }
+            else {
+                alert(result.message);
+            }
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
+                console.table([{
+                    "错误类型": jqXHR,
+                    "错误信息": textStatus,
+                    "http状态": errorThrown
+                }])
+            }
+        });
+        for(var l=0;l<overlays_to_rm.length;l++)
+        {
+            map.removeOverlay(overlays_to_rm[l]);
+        }
+        overlays_to_rm=[];
+        //reset_corr();
     }
     function area_selection(points_list,overlays_tmp)
     {
@@ -109,7 +201,7 @@
                         }
                     });
     }
-    function select_an_area(now_overlay,line_points)
+    function select_an_area(now_overlay,line_points,modal_in)
     {
         if (corr_step_now==-1)//普通模式
         {
@@ -121,6 +213,19 @@
         else if (corr_step_now==-2)
         {
             //时滞相关性分析,根据形状发送至后台数据
+            overlays_to_rm.push(now_overlay);
+
+            line_points_list.push(line_points);
+            //弹出设置框
+            myModal.css("height", "300px");
+            myModal.css("weight", "300px");
+            modal_dialog.css("height", "300px");
+            modal_dialog.css("weight", "300px");
+            echart_body.css("height", "300px");
+            echart_body.css("weight", "300px");
+            echart_body.hide();
+            modal_in.show();
+            myModal.modal('show');
         }
         else
         {
@@ -211,6 +316,11 @@
       var li_delay= document.createElement("li");
       var href_delay = document.createElement("a");
       href_delay.innerHTML ="时滞相关性分析";
+      href_delay.href="javascript:void(0);";
+      href_delay.onclick= function(e){
+        time_delay(drop_ul);
+        return false;
+      };
       li_delay.appendChild(href_delay);
       drop_ul.appendChild(li_delay);
       // 添加文字说明
@@ -289,7 +399,7 @@
             {
 
                 now_overlay= e.overlay;
-                select_an_area(now_overlay,line_points);
+                select_an_area(now_overlay,line_points,modal_inner);
             }
             else {
                 $.confirm({
@@ -326,7 +436,7 @@
             //alert('左上：'+ sw.lng+',' + sw.lat + '    右下：'+ne.lng+','+ne.lat);
             var line_points2=[sw,ne];
             var now_overlay= e.overlay;
-            select_an_area(now_overlay,line_points2);
+            select_an_area(now_overlay,line_points2,modal_inner);
         }
     };
     var styleOptions = {

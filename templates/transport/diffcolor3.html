@@ -7,7 +7,11 @@
 {% block endscript %}
 <script type="text/javascript">
      var myModal=$("#modal_body");
-     var myChart = echarts.init(document.getElementById('modal_body'));
+     var echart_body=$("#echart_body");
+     echart_body.hide();
+     var modal_dialog=$("#modal_dialog");
+     var myChart = echarts.init(document.getElementById('echart_body'));
+     var modal_inner=$("#modal_inner");
 </script>
 <script type="text/javascript">
     function handle_result_from_json(result)
@@ -24,6 +28,14 @@
         }
         else {
             $.get(addr).done(function (rtn_json) {
+            myModal.css("height", "600px");
+            myModal.css("weight", "1000px");
+            modal_dialog.css("height", "600px");
+            modal_dialog.css("weight", "1000px");
+            echart_body.css("height", "600px");
+            echart_body.css("weight", "1000px");
+            modal_inner.hide();
+            echart_body.show();
             //JSON.parse(rtn_json);
             myChart.setOption(rtn_json);
             myModal.modal('show');

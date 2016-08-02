@@ -611,7 +611,11 @@ def label_the_road(request):
 def showpath(request):
     noise_invisible=int(request.GET.get("noise_invisible",0))
     split_show = int(request.GET.get("split_show", 0))
-
+    max_delay_cnt=24*2
+    delay_list=[]
+    for dl in range(max_delay_cnt):
+        delay_list.append(round(float(dl*0.5),2))
+    delay_times=range(1,25)
     file_names=os.listdir(BASE_DIR+os.sep+"static"+os.sep+"theme")
     theme_names=[]
     static_theme_url=[]
