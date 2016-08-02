@@ -22,11 +22,13 @@
             alert(str_corr);
             addr = addr.addr;
         }
-        $.get(addr).done(function (rtn_json) {
-            var option_1=JSON.parse(rtn_json);
-            myChart.setOption(option_1);
+        else {
+            $.get(addr).done(function (rtn_json) {
+            //JSON.parse(rtn_json);
+            myChart.setOption(rtn_json);
             myModal.modal('show');
         });
+        }
     }
 </script>
 {% endblock %}

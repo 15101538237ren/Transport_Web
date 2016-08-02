@@ -9,9 +9,9 @@
     {% endifequal %}
     <script>
         var corr_step_now=-1;
-        var corr_data_str='';
-        var corr_types=[];
         var overlays_to_rm=[];
+        var line_points_list=[];
+        var tmp_attr_name="";
     </script>
     {% block headscript %}
     {% endblock %}
@@ -39,8 +39,24 @@
 {% block endscript %}
 {% endblock %}
 <script type="text/javascript" >
-    function area_selection(appendix,overlays_tmp)
+    function reset_corr()
     {
+        corr_step_now=-1;
+        overlays_to_rm=[];
+        line_points_list=[];
+    }
+    function multi_region_corr(div,corr_btn,selected_done,drop_ul)
+    {
+        div.removeChild(corr_btn);
+        div.appendChild(selected_done);
+        drop_ul.style.visibility="hidden";
+        alert("请您依次选择区域,单击左上角[选好了]按钮完成多区域选取!");
+        reset_corr();
+        corr_step_now=0;
+    }
+    function area_selection(points_list,overlays_tmp,attr_name)
+    {
+        tmp_attr_name=attr_name;
         $.confirm({
                         confirmButtonClass: 'btn-info',
                         cancelButtonClass: 'btn-danger',
@@ -53,13 +69,34 @@
                         closeIcon: true,
                         confirm: function () {
 
-                            var addr = "/transport/area_statistics?"+"data_type=1&point_type={{ data_type }}"+appendix;
-                            $.get(addr, function (result) {
-                                if (result.code == 0) {
+                            $.ajaxSetup({
+                                dataType: "json",
+                                beforeSend: function (xhr, settings) {
+                                    xhr.setRequestHeader("X-CSRFToken", '{{ csrf_token }}');
+                                },
+                            });
+
+                            var json_points = JSON.stringify(points_list);
+                            $.ajax({
+                                type: "POST",
+                                url: "/transport/area_statistics?"+"data_type=1&point_type={{ data_type }}",
+                                data: {tmp_attr_name: json_points},
+                                success: function (result) {
+                                    if (result.code == 0) {
                                     handle_result_from_json(result);
+                                    tmp_attr_name="";
                                 }
                                 else {
                                     alert(result.message);
+                                    tmp_attr_name="";
+                                }
+                                },
+                                error: function (jqXHR, textStatus, errorThrown) {
+                                    console.table([{
+                                        "错误类型": jqXHR,
+                                        "错误信息": textStatus,
+                                        "http状态": errorThrown
+                                    }])
                                 }
                             });
                             for(var l=0;l<overlays_tmp.length;l++)
@@ -74,6 +111,34 @@
                             }
                         }
                     });
+    }
+    function select_an_area(now_overlay,line_points)
+    {
+        if (corr_step_now==-1)//普通模式
+        {
+            overlays_to_rm.push(now_overlay);
+            area_selection(line_points,overlays_to_rm,"point_list");
+            overlays_to_rm=[];
+        }
+        else if (corr_step_now==-2)
+        {
+            //时滞相关性分析,根据形状发送至后台数据
+        }
+        else
+        {
+            //多区域相关性分析
+            overlays_to_rm.push(now_overlay);
+            line_points_list.push(line_points);
+        }
+    }
+    function i_selected_done(div,corr_btn,selected_done,drop_ul)
+    {
+        area_selection(line_points_list,overlays_to_rm,"region_points");
+        reset_corr();
+        div.removeChild(selected_done);
+        div.appendChild(corr_btn);
+        drop_ul.style.visibility="visible";
+        reset_corr();
     }
     //百度地图相关代码
     var myModal=$('#myModal');
@@ -104,17 +169,55 @@
       var div = document.createElement("div");
       div.setAttribute('class','btn-group');
       div.setAttribute('role','group');
-      var btn = document.createElement("input");
-      btn.setAttribute('class','btn btn-success');
-      btn.type="button";
-      btn.value="相关性分析";
-      btn.onclick = function(e){
-        alert("请您分别选取两个区域!");
-        corr_step_now=0;
-        corr_data_str='';
+
+      var btn_normal = document.createElement("button");
+      btn_normal.setAttribute('class','btn btn-primary');
+      btn_normal.innerText="普通模式";
+      btn_normal.onclick = function(e){
+        reset_corr();
       };
+      div.appendChild(btn_normal);
+
+      var span_drop = document.createElement("span");
+      span_drop.setAttribute('class','caret');
+
+      var btn_corr = document.createElement("button");
+      btn_corr.setAttribute('class','btn btn-success dropdown-toggle');
+      btn_corr.innerText="相关分析";
+      btn_corr.setAttribute('data-toggle','dropdown');
+      btn_corr.setAttribute('aria-expanded','false');
+      btn_corr.setAttribute('aria-haspopup','true');
+      btn_corr.appendChild(span_drop);
+
+      var selected_done = document.createElement("button");
+      selected_done.setAttribute('class','btn btn-danger');
+      selected_done.innerText="选好了";
+      selected_done.onclick=function(e){
+          i_selected_done(div,btn_corr,selected_done,drop_ul)
+      };
+      var drop_ul=document.createElement("ul");//创建ul
+      drop_ul.setAttribute('class','dropdown-menu');
+
+      var li_region= document.createElement("li");
+      var href_region = document.createElement("a");
+      href_region.innerHTML ="多区域相关性分析";
+      href_region.href="javascript:void(0);";
+      href_region.onclick= function(e){
+        multi_region_corr(div,btn_corr,selected_done,drop_ul);
+        return false;
+      };
+      li_region.appendChild(href_region);
+      drop_ul.appendChild(li_region);
+
+      var li_delay= document.createElement("li");
+      var href_delay = document.createElement("a");
+      href_delay.innerHTML ="时滞相关性分析";
+      li_delay.appendChild(href_delay);
+      drop_ul.appendChild(li_delay);
       // 添加文字说明
-      div.appendChild(btn);
+      div.appendChild(btn_corr);
+      div.appendChild(drop_ul);
+
       // 添加DOM元素到地图中
       map.getContainer().appendChild(div);
       // 将DOM元素返回
@@ -187,35 +290,7 @@
             {
 
                 now_overlay= e.overlay;
-                if (corr_step_now==-1)
-                {
-                    var point_list_json_str="&point_list="+JSON.stringify(line_points);
-                    overlays_to_rm.push(now_overlay);
-                    area_selection(point_list_json_str,overlays_to_rm);
-                    overlays_to_rm=[];
-                }
-                else if (corr_step_now!=1)
-                {
-                    //第一个区域的点.
-                    corr_step_now=1;
-                    corr_types.push('polyline');
-                    overlays_to_rm.push(now_overlay);
-                    corr_data_str='&first='+JSON.stringify(line_points);
-                }
-                else if (corr_step_now==1){
-                    //第二个区域的点.
-                    corr_types.push('polyline');
-                    overlays_to_rm.push(now_overlay);
-                    corr_data_str=corr_data_str+'&second='+JSON.stringify(line_points);
-                    corr_data_str=corr_data_str+'&corr_types='+corr_types.join(",");
-                    area_selection(corr_data_str,overlays_to_rm);
-
-                    corr_step_now=0;
-                    corr_data_str='';
-                    corr_types=[];
-                    overlays_to_rm=[];
-                }
-
+                select_an_area(now_overlay,line_points);
             }
             else {
                 $.confirm({
@@ -250,37 +325,9 @@
             var sw = olRectPoint[0];		//左上
             var ne = olRectPoint[2];		//右下
             //alert('左上：'+ sw.lng+',' + sw.lat + '    右下：'+ne.lng+','+ne.lat);
-            var now_point_lst=JSON.stringify([sw,ne]);
-            now_overlay= e.overlay;
-            if (corr_step_now==-1)
-            {
-                //单独区域
-                var rect_point_list_str="&point_list="+now_point_lst;
-                overlays_to_rm.push(now_overlay);
-                area_selection(rect_point_list_str,overlays_to_rm);
-                overlays_to_rm=[];
-            }
-            else if (corr_step_now!=1)
-            {
-                //第一个区域的点.
-                corr_step_now=1;
-                corr_types.push('rect');
-                overlays_to_rm.push(now_overlay);
-                corr_data_str='&first='+now_point_lst;
-            }
-            else if (corr_step_now==1){
-                //第二个区域的点.
-                corr_types.push('rect');
-                overlays_to_rm.push(now_overlay);
-                corr_data_str=corr_data_str+'&second='+now_point_lst;
-                corr_data_str=corr_data_str+'&corr_types='+corr_types.join(",");
-                area_selection(corr_data_str,overlays_to_rm);
-
-                corr_step_now=0;
-                corr_data_str='';
-                corr_types=[];
-                overlays_to_rm=[];
-            }
+            var line_points2=[sw,ne];
+            var now_overlay= e.overlay;
+            select_an_area(now_overlay,line_points2);
         }
     };
     var styleOptions = {
