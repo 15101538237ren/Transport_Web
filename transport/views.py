@@ -219,6 +219,8 @@ def delay_area_statistic(area_list, point_type, data_type, delay_cnt, min_time_s
     # 如果只有一种违章type，外层i的循环相当于只进行一次
     for type in range(typemin, typemax + 1):
         points_type_dict = points_info_dict['type'+str(type)]
+        corr_dict['type'+str(type)] = {}
+        tmp_dict = corr_dict['type'+str(type)]
         for i in range(0, delay_cnt+1):
             if(i == 0):
                 pos_list1 = points_type_dict['posNum']
@@ -234,7 +236,7 @@ def delay_area_statistic(area_list, point_type, data_type, delay_cnt, min_time_s
                 pos_list2 = points_type_dict['posNum'][i:]
                 neg_list2 = points_type_dict['negNum'][i:]
                 r_pair = calc_corr(pos_list1, pos_list2, neg_list1, neg_list2)
-            corr_dict[min_time_size * i] = r_pair
+            tmp_dict[min_time_size * i] = r_pair
     return corr_dict
 
 
