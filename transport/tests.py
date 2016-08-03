@@ -62,7 +62,6 @@ print(lower_bound_search1(table,0,len(table),num))
 print(upper_bound_search(table,0,len(table),num))
 print(upper_bound_search1(table,0,len(table),num))'''
 
-list = [123,'abc',{'key':'value'},345]
-list.pop(0)
-print(list)
+list_1 = [1,2,3,4,5]
+print(list_1[:])
 

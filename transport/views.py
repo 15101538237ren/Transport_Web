@@ -7,7 +7,7 @@ from Transport_Web.helpers import *
 from Transport_Web.settings import STATIC_ROOT
 from django.views.decorators.http import require_GET, require_POST
 from transport.direction import *
-import pytz
+import pytz,copy
 from transport.json_handler import generate_option
 from operator import itemgetter, attrgetter
 IN_RECTANGLE_AREA = 0
@@ -52,7 +52,7 @@ def area_statistics(request):
     elif(type=="multi"): #两个区域进行分析
 
         area_points_list = point_list
-        min_time_size,is_corr = 1,0
+        min_time_size,is_corr = 1,1
         points_info_list = multi_area_statistic(area_points_list, point_type, data_type, min_time_size, is_corr)
         #下面是将要进行相关性分析的序列长度变成相同的
         typemin,typemax = 1,1
@@ -80,25 +80,10 @@ def area_statistics(request):
         delay_time = float(request.GET.get('del_time', -1))
         delay_cnt = int(request.GET.get('del_cnt', -1))
         area_list = json.loads(area_list_str)
-        min_time_size, is_corr = 1, 0
-        points_info_list = delay_area_statistic(area_list, point_type, data_type, delay_time, delay_cnt, min_time_size, is_corr)
-        typemin, typemax = 1, 1
-        if (point_type == 0):
-            typemin, typemax = 1, 4
-        else:
-            typemin, typemax = point_type, point_type
-
-        corr_list = []
-        # 如果只有一种违章type，外层i的循环相当于只进行一次
-        for type in range(typemin, typemax + 1):
-            for i in range(1, len(points_info_list)):
-                [pos_list1, pos_list2, neg_list1, neg_list2] = get_equal_length_lists(points_info_list[0], points_info_list[i], type)
-                # 下面是相关性分析的计算
-                r_pair = calc_corr(pos_list1, pos_list2, neg_list1, neg_list2)
-                corr_list.append(r_pair)
-
+        min_time_size, is_corr = delay_time, 1
+        corr_dict_json = delay_area_statistic(area_list, point_type, data_type, delay_cnt, min_time_size, is_corr)
         addr = '/static/option/option1.json'
-        response_info = {'addr': addr, 'corr': corr_list}
+        response_info = {'addr': addr, 'corr': corr_dict_json}
         return success_response(response_info)
 
 #将两个序列的长度变成相同的
@@ -221,17 +206,35 @@ def multi_area_statistic(area_points_list, point_type, data_type, min_time_size,
     return points_info_list
 
 
-def delay_area_statistic(area_list, point_type, data_type, delay_time, delay_cnt, min_time_size, is_corr):
+def delay_area_statistic(area_list, point_type, data_type, delay_cnt, min_time_size, is_corr):
     points_info_dict = get_single_area_data_points(area_list, point_type, data_type, min_time_size, is_corr)
-    points_info_list = [points_info_dict]
-    for i in range(delay_cnt):
-        tmp_points_dict = {}
+    if (point_type == 0):
+        typemin, typemax = 1, 4
+    else:
+        typemin, typemax = point_type, point_type
 
-        for key,value in points_info_dict.items():
-            pass
-    points_info_list.append(points_info_dict)
+    corr_dict = {}
+    # 如果只有一种违章type，外层i的循环相当于只进行一次
+    for type in range(typemin, typemax + 1):
+        points_type_dict = points_info_dict['type'+str(type)]
+        for i in range(0, delay_cnt+1):
+            if(i == 0):
+                pos_list1 = points_type_dict['posNum']
+                neg_list1 = points_type_dict['negNum']
+            else:
+                pos_list1 = points_type_dict['posNum'][:-i]
+                neg_list1 = points_type_dict['negNum'][:-i]
 
-    return points_info_list
+            # 下面是相关性分析的计算
+            if(len(pos_list1) == 0 or len(neg_list1) == 0):
+                r_pair = [0,0]
+            else:
+                pos_list2 = points_type_dict['posNum'][i:]
+                neg_list2 = points_type_dict['negNum'][i:]
+                r_pair = calc_corr(pos_list1, pos_list2, neg_list1, neg_list2)
+            corr_dict[min_time_size * i] = r_pair
+    corr_dict_json = json.dumps(corr_dict, sort_keys=True, indent=4)
+    return corr_dict_json
 
 
 #判断点是否在矩形边界区域内
@@ -312,8 +315,6 @@ def get_time_data_list(sub_table, min_final_index, max_final_index, area_points_
         tmp_minute = int((date[4]//min_time_sz)*min_time_sz)
         str_day_time = str_day + '-' + str(date[3]) + '-' + str(tmp_minute) # 将日期+小时存成字符串
         day_time_index = day_time_dict.get(str_day_time, -1)
-        if(day_time_index == -1):
-            print("YES")
         '''if (day_hour_index == -1):  # 表示data_index里面没有这个字段
             day_hour_dict[str_day_hour] = date_num
             # 获取时间数据只到小时级别
@@ -435,6 +436,19 @@ def get_sum_data_list(sub_table, min_final_index, max_final_index, area_points_l
     return [data_list, stat_dict, [date_hour_min, date_hour_max]]
 
 
+def get_date_from_corr(datetmp, min_time_size, is_corr):
+    if (is_corr == 1):
+        if (min_time_size == 1):  # 当最小时间颗粒度为1时，表示整小时，这时忽略
+            str_date_info = (datetmp.year, datetmp.month, datetmp.day, datetmp.hour, 0)
+        else:
+            str_date_info = (datetmp.year, datetmp.month, datetmp.day, datetmp.hour, datetmp.minute)
+    else:
+        if (min_time_size == 1):  # 当最小时间颗粒度为1时，表示整小时，这时忽略
+            str_date_info = str(datetmp.month) + '/' + str(datetmp.day) + '\n' + str(datetmp.hour) + ':00'
+        else:
+            str_date_info = str(datetmp.month) + '/' + str(datetmp.day) + '\n' + str(datetmp.hour) + ':' + str(
+                datetmp.minute)
+    return str_date_info
 
 #获取在矩形区域内的所有数据点
 #通过max_index来选择需要返回哪些数据
@@ -536,17 +550,19 @@ def get_points_in_region(table_arr,type_index_list,area_points_list,border_list,
     date_min = date_hour_min.date()
     date_time_min = datetime.datetime(date_min.year, date_min.month, date_min.day, t_h, 0, 0)
     date_dict, date_info_num = {}, 0
-
-    for hour in range(hours+1):
-        datetmp = date_time_min + datetime.timedelta(hours=hour)
+    min_time_sz = int(min_time_size * 60)  # 将最小颗粒度转化成分钟
+    time_cnt = int(hours * 60 // min_time_sz)  # 计算出一小时中有多少个最小时间颗粒度
+    for i in range(time_cnt+1):   #因为要将最大时间也包含进来，所以range参数要加1
+        tmp_minute = min_time_sz * i
+        datetmp = date_time_min + datetime.timedelta(minutes=tmp_minute)
         #str_date_info = str(datetmp.hour) + ':' + str(0) + '\n' + str(datetmp.month) + '/' + str(datetmp.day)
-        str_date_info = str(datetmp.month) + '/' + str(datetmp.day) + '\n' + str(datetmp.hour) + ':00'
+        str_date_info = get_date_from_corr(datetmp, min_time_size, is_corr)
         date_list.append(str_date_info)
         date_dict[str_date_info] = date_info_num
         date_info_num += 1
     #points_info_dict = convert_points_info(points_info_dict, table_arr_length)
     # sort dict
-    points_info_dict = get_three_list(points_info_dict, date_dict, type_index_list)
+    points_info_dict = get_three_list(points_info_dict, date_dict, type_index_list, min_time_size, is_corr)
     points_info_dict['day_list'] = day_list
     points_info_dict['max_num'] = max_num
 
@@ -563,7 +579,7 @@ def addEntityToList(dict1,key,date_index,dict2,def_type):
     else:
         dict1[key][date_index] = dict2.get(key,def_type)
 
-def get_three_list(point_dict, date_dict, type_index_list):
+def get_three_list(point_dict, date_dict, type_index_list, min_time_size, is_corr):
     point_info_dict = {}
     for i in type_index_list:
         table = point_dict['type' + str(i)]
@@ -571,7 +587,8 @@ def get_three_list(point_dict, date_dict, type_index_list):
         table_info_dict = {'datatime':[], 'posNum':[], 'negNum':[]}
         for j in range(table_len):
             tmplist = table[j]['datatime']
-            table[j]['datatime'] = str(tmplist[1]) + '/' + str(tmplist[2]) + '\n' + str(tmplist[3]) + ':00'
+            date_tmp = datetime.datetime(tmplist[0], tmplist[1], tmplist[2], tmplist[3], tmplist[4])
+            table[j]['datatime'] = get_date_from_corr(date_tmp, min_time_size, is_corr)
             date_index = date_dict.get(table[j]['datatime'], -1)
             if(date_index != -1):
                 addEntityToList(table_info_dict, 'datatime', date_index, table[j], -1)

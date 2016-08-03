@@ -125,8 +125,10 @@
             data: {point_list: json_points},
             success: function (result) {
                 if (result.code == 0) {
-                handle_result_from_json(result);
-            }
+                    //handle_result_from_json(result);
+                    msg = result.message;
+                    alert(msg.corr);
+                }
             else {
                 alert(result.message);
             }
