@@ -55,27 +55,13 @@ def area_statistics(request):
 
         area_points_list = point_list
         min_time_size,is_corr = 1,1
-        points_info_list = multi_area_statistic(area_points_list, point_type, data_type, min_time_size, is_corr)
-        #下面是将要进行相关性分析的序列长度变成相同的
-        typemin,typemax = 1,1
-        if(point_type ==0):
-            typemin,typemax = 1,4
-        else:
-            typemin,typemax = point_type,point_type
+        corr_dict = multi_area_statistic(area_points_list, point_type, data_type, min_time_size, is_corr)
 
-        corr_list = []
-        # 如果只有一种违章type，外层i的循环相当于只进行一次
-        for type in range(typemin,typemax+1):
-            for i in range(1,len(points_info_list)):
-                [pos_list1,pos_list2,neg_list1,neg_list2] = get_equal_length_lists(points_info_list[0], points_info_list[i], type)
-                #下面是相关性分析的计算
-                r_pair = calc_corr(pos_list1, pos_list2, neg_list1, neg_list2)
-                corr_list.append(r_pair)
 
         #data_points_json = json.dumps(points_info_list, indent=4)
         #print(data_points_json)
         addr = '/static/option/option1.json'
-        response_info = {'addr':addr,'corr':corr_list}
+        response_info = {'addr':addr,'corr':corr_dict}
         return success_response(response_info)
     elif(type=='delay'):
         delay_time = float(request.GET.get('del_time', -1))
@@ -203,8 +189,26 @@ def multi_area_statistic(area_points_list, point_type, data_type, min_time_size,
     for area_list in area_points_list:   #遍历每一个区域的坐标点
         points_info_dict = get_single_area_data_points(area_list, point_type, data_type, min_time_size, is_corr)
         points_info_list.append(points_info_dict)
+        # 下面是将要进行相关性分析的序列长度变成相同的
+    typemin, typemax = 1, 1
+    if (point_type == 0):
+        typemin, typemax = 1, 4
+    else:
+        typemin, typemax = point_type, point_type
 
-    return points_info_list
+    corr_dict = {}
+    # 如果只有一种违章type，外层i的循环相当于只进行一次
+    for type in range(typemin, typemax + 1):
+        corr_dict['type'+str(type)] = {}
+        tmp_dict = corr_dict['type' + str(type)]
+        for i in range(1, len(points_info_list)):
+            [pos_list1, pos_list2, neg_list1, neg_list2] = get_equal_length_lists(points_info_list[0],
+                                                                                  points_info_list[i], type)
+            # 下面是相关性分析的计算
+            r_pair = calc_corr(pos_list1, pos_list2, neg_list1, neg_list2)
+            tmp_dict[i] = r_pair
+
+    return corr_dict
 
 
 def delay_area_statistic(area_list, point_type, data_type, delay_cnt, min_time_size, is_corr):
@@ -327,9 +331,6 @@ def get_time_data_list(sub_table, min_final_index, max_final_index, area_points_
 
 
 def get_sum_data_list(sub_table, min_final_index, max_final_index, area_points_list, border_list, area_type, min_time_size, is_corr):
-
-
-
 
     data_list, hour_dict, hour_num, date_dict, date_num = [], {}, 0, {}, 0
     posSum, negSum = 0, 0
