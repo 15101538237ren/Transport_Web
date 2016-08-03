@@ -72,10 +72,31 @@ def generate_series_dict(point_type,legend_names,data_type_list,type_of_series,d
                 item["data"]=series_dict["type"+str(i)][data_type_list[j]]
                 ret_arr.append(item)
     return ret_arr
-def generate_option(point_type,**points_info_dict):
+def generate_delay_option(point_type,json_file_name,**corr_dict):
+    option_origin_path = OPTION_ROOT_DIR + os.sep + "option_delay_corr.json"
+
+    option = get_json_template_from(option_origin_path)
+    out_option_file_path = OPTION_ROOT_DIR + os.sep +json_file_name
+    data_type_name = DATA_TYPE_DICT[point_type]
+    title_name = data_type_name + "相关性与延时的关系"
+    if point_type == 0:
+        datelist_data = corr_dict["date_list"]
+        legend_names = []
+        for i_tmp in range(1, 5):
+            for j_tmp in range(len(LEGEND_NAMES)):
+                tmp_str = DATA_TYPE_DICT[i_tmp] + "_" + LEGEND_NAMES_SHORT[j_tmp]
+                legend_names.append(tmp_str)
+    else:
+        datelist_data = corr_dict["type" + str(point_type)]["datatime"]
+        legend_names = LEGEND_NAMES
+    seriesDictList = generate_series_dict(point_type, legend_names, DATA_TYPE_LIST, "line", datelist_data,
+                                          **corr_dict)
+    put_data_into_json(option, out_option_file_path, title=title_name, legend_names=legend_names,
+                       xAxisData=datelist_data, seriesDictList=seriesDictList)
+def generate_option(point_type,json_file_name,**points_info_dict):
     option_origin_path = OPTION_ROOT_DIR + os.sep + "option1_origin.json"
     option = get_json_template_from(option_origin_path)
-    out_option_file_path = OPTION_ROOT_DIR + os.sep + "option1.json"
+    out_option_file_path = OPTION_ROOT_DIR + os.sep + json_file_name
     data_type_name = DATA_TYPE_DICT[point_type]
     title_name = data_type_name + "举报量与时间的关系"
     if point_type == 0:
