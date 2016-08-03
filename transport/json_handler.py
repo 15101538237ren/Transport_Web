@@ -32,7 +32,8 @@ def put_data_into_json(option_arg,out_file_path,title="title",legend_names=[],xA
     option=option_arg
     option["title"]["text"]=title
     option["legend"]["data"]=legend_names
-    option["xAxis"][0]["data"]=xAxisData
+    if len(xAxisData):
+        option["xAxis"][0]["data"]=xAxisData
     option["series"]=seriesDictList
 
     option_file=open(out_file_path,"w")
@@ -72,28 +73,102 @@ def generate_series_dict(point_type,legend_names,data_type_list,type_of_series,d
                 item["data"]=series_dict["type"+str(i)][data_type_list[j]]
                 ret_arr.append(item)
     return ret_arr
-def generate_delay_option(point_type,json_file_name,**corr_dict):
-    option_origin_path = OPTION_ROOT_DIR + os.sep + "option_delay_corr.json"
+def generate_multi_series_dict(point_type,legend_names,type_of_series,**corr_dict):
+    ret_arr=[]
+    #单个的情况
 
+    if point_type!=0:
+        for i in range(len(legend_names)):
+            item={}
+            item["name"]=legend_names[i]
+            item["type"]=type_of_series
+            offset = i%2
+            item["data"]=corr_dict["type"+str(point_type)][offset]
+            ret_arr.append(item)
+    else:
+        for i in range(1,5):
+            for j in range(2):
+                idx=2*i+j-2
+                item={}
+                item["name"]=legend_names[idx]
+                item["type"]=type_of_series
+                item["data"]=corr_dict["type"+str(i)][j]
+                ret_arr.append(item)
+    return ret_arr
+def generate_multi_option(point_type,json_file_name,plot_type,**corr_dict):
+    option_origin_path = OPTION_ROOT_DIR + os.sep + "option_multi_corr.json"
     option = get_json_template_from(option_origin_path)
     out_option_file_path = OPTION_ROOT_DIR + os.sep +json_file_name
     data_type_name = DATA_TYPE_DICT[point_type]
-    title_name = data_type_name + "相关性与延时的关系"
+    title_name = data_type_name + "_多区域相关性结果"
     if point_type == 0:
-        datelist_data = corr_dict["date_list"]
         legend_names = []
         for i_tmp in range(1, 5):
             for j_tmp in range(len(LEGEND_NAMES)):
                 tmp_str = DATA_TYPE_DICT[i_tmp] + "_" + LEGEND_NAMES_SHORT[j_tmp]
                 legend_names.append(tmp_str)
     else:
-        datelist_data = corr_dict["type" + str(point_type)]["datatime"]
         legend_names = LEGEND_NAMES
-    seriesDictList = generate_series_dict(point_type, legend_names, DATA_TYPE_LIST, "line", datelist_data,
-                                          **corr_dict)
-    put_data_into_json(option, out_option_file_path, title=title_name, legend_names=legend_names,
-                       xAxisData=datelist_data, seriesDictList=seriesDictList)
-def generate_option(point_type,json_file_name,**points_info_dict):
+    seriesDictList = generate_multi_series_dict(point_type, legend_names,plot_type,**corr_dict)
+    put_data_into_json(option, out_option_file_path, title=title_name, legend_names=legend_names, seriesDictList=seriesDictList)
+def generate_delay_option(point_type,json_file_name,plot_type,**corr_dict):
+    option_origin_path = OPTION_ROOT_DIR + os.sep + "option_delay_corr.json"
+
+    option = get_json_template_from(option_origin_path)
+    out_option_file_path = OPTION_ROOT_DIR + os.sep +json_file_name
+    data_type_name = DATA_TYPE_DICT[point_type]
+    title_name = data_type_name + "_相关性与延时的关系"
+    if point_type == 0:
+        legend_names = []
+        for i_tmp in range(1, 5):
+            for j_tmp in range(len(LEGEND_NAMES)):
+                tmp_str = DATA_TYPE_DICT[i_tmp] + "_" + LEGEND_NAMES_SHORT[j_tmp]
+                legend_names.append(tmp_str)
+    else:
+        legend_names = LEGEND_NAMES
+    seriesDictList = generate_delay_series_dict(point_type, legend_names,plot_type,**corr_dict)
+    put_data_into_json(option, out_option_file_path, title=title_name, legend_names=legend_names, seriesDictList=seriesDictList)
+def generate_delay_series_dict(point_type,legend_names,type_of_series,**series_dict):
+    ret_arr=[]
+    #单个的情况
+    if point_type!=0:
+        type_dict=series_dict["type"+str(point_type)]
+        type_dict_sorted= sorted(type_dict.iteritems(), key=lambda d:d[0])
+        data_list_for_use=[]
+        for (delay_time,corr_list_tmp) in type_dict_sorted.items():
+            for tmp_i in range(len(corr_list_tmp)):
+                while len(data_list_for_use)<len(corr_list_tmp):
+                    data_list_for_use.append([])
+                data_list_for_use[tmp_i].append([delay_time,corr_list_tmp[tmp_i]])
+        for i in range(len(legend_names)):
+            item={}
+            item["name"]=legend_names[i]
+            item["type"]=type_of_series
+            item["data"]=data_list_for_use[i]
+            ret_arr.append(item)
+    #所有类型点
+    else:
+        data_list_for_use=[]
+        for i in range(1,5):
+
+            type_dict=series_dict["type"+str(i)]
+            type_dict_sorted= sorted(type_dict.iteritems(), key=lambda d:d[0])
+            for (delay_time,corr_list_tmp) in type_dict_sorted:
+                for tmp_i in range(len(corr_list_tmp)):
+                    while len(data_list_for_use)< (2*(i-1)+len(corr_list_tmp)):
+                        data_list_for_use.append([])
+                    idx_now=2*(i-1)+tmp_i
+                    data_list_for_use[idx_now].append([delay_time,corr_list_tmp[tmp_i]])
+            for j in range(1,3):
+                idx=2*i+(j-1)-2
+                item={}
+                item["name"]=legend_names[idx]
+                item["type"]=type_of_series
+                now_idx=2*i+(j-1)-2
+                item["data"]=data_list_for_use[now_idx]
+                ret_arr.append(item)
+    return ret_arr
+def generate_option(point_type,json_file_name,plot_type,**points_info_dict):
     option_origin_path = OPTION_ROOT_DIR + os.sep + "option1_origin.json"
     option = get_json_template_from(option_origin_path)
     out_option_file_path = OPTION_ROOT_DIR + os.sep + json_file_name
@@ -109,7 +184,7 @@ def generate_option(point_type,json_file_name,**points_info_dict):
     else:
         datelist_data = points_info_dict["type" + str(point_type)]["datatime"]
         legend_names = LEGEND_NAMES
-    seriesDictList = generate_series_dict(point_type, legend_names, DATA_TYPE_LIST, "line", datelist_data,
+    seriesDictList = generate_series_dict(point_type, legend_names, DATA_TYPE_LIST,plot_type, datelist_data,
                                           **points_info_dict)
     put_data_into_json(option, out_option_file_path, title=title_name, legend_names=legend_names,
                        xAxisData=datelist_data, seriesDictList=seriesDictList)

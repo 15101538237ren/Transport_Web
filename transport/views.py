@@ -8,7 +8,7 @@ from Transport_Web.settings import STATIC_ROOT
 from django.views.decorators.http import require_GET, require_POST
 from transport.direction import *
 import pytz,copy
-from transport.json_handler import generate_option,generate_delay_option
+from transport.json_handler import generate_option,generate_delay_option,generate_multi_option
 from operator import itemgetter, attrgetter
 IN_RECTANGLE_AREA = 0
 IN_POLYGON_AREA = 1
@@ -47,7 +47,7 @@ def area_statistics(request):
         points_info_dict = single_area_statistic(point_list, point_type, data_type, min_time_size, is_corr)
         data_points_json = json.dumps(points_info_dict, sort_keys=True, indent=4)
         json_file_name='option1.json'
-        generate_option(point_type,json_file_name, **points_info_dict)
+        generate_option(point_type,json_file_name,"line", **points_info_dict)
         print(data_points_json)
         addr = '/static/option/'+json_file_name
         return success_response(addr)
@@ -74,16 +74,18 @@ def area_statistics(request):
 
         #data_points_json = json.dumps(points_info_list, indent=4)
         #print(data_points_json)
-        addr = '/static/option/option1.json'
-        response_info = {'addr':addr,'corr':corr_list}
-        return success_response(response_info)
+        corr_dict={}
+        json_file_name='option_delay_tmp.json'
+        generate_multi_option(point_type,json_file_name,"line", **corr_dict)
+        addr = '/static/option/'+json_file_name
+        return success_response(addr)
     elif(type=='delay'):
         delay_time = float(request.GET.get('del_time', -1))
         delay_cnt = int(request.GET.get('del_cnt', -1))
         min_time_size, is_corr = delay_time, 1
         corr_dict = delay_area_statistic(point_list, point_type, data_type, delay_cnt, min_time_size, is_corr)
         json_file_name='option_delay_tmp.json'
-        generate_delay_option(point_type,json_file_name, **corr_dict)
+        generate_delay_option(point_type,json_file_name,"line", **corr_dict)
         addr = '/static/option/'+json_file_name
         return success_response(addr)
 
@@ -259,23 +261,12 @@ def point_is_in_area(area_points_list, border_list, point,type):
 
 def get_time_data_list(sub_table, min_final_index, max_final_index, area_points_list, border_list, area_type, min_time_size, is_corr):
     data_list, day_list, day_dict, day_time_dict, day_num, date_num = [], [], {}, {}, 0, 0
-    '''count = 0
-    test_list = []
-    for i in range(len(table)):
-
-        if(slng <= table[i][LNG_INDEX] and table[i][LNG_INDEX] <= elng and elat <= table[i][LAT_INDEX] and table[i][LAT_INDEX] <= slat):
-            count += 1
-            test_list.append([table[i][LNG_INDEX],table[i][LAT_INDEX]])
-    print(count)
-    print(max_final_index-min_final_index+1)
-    test_list = sorted(test_list,key = itemgetter(LNG_INDEX,LAT_INDEX))
-    test2_list = []'''
 
     posSum, negSum, maxNum = 0, 0, 0
     num_type1, num_type2 = 'posNum', 'negNum'
     table_date = sub_table[0][DATE_TIME_INDEX]
-    date_hour_min = datetime.datetime(*tuple(table_date)[0:5])
-    date_hour_max = datetime.datetime(*tuple(table_date)[0:5])
+    date_time_min = datetime.datetime(*tuple(table_date)[0:5])
+    date_time_max = datetime.datetime(*tuple(table_date)[0:5])
 
     curr_table = sub_table[min_final_index:max_final_index + 1]
     curr_table = sorted(curr_table,key=itemgetter(DATE_TIME_INDEX))
@@ -288,11 +279,11 @@ def get_time_data_list(sub_table, min_final_index, max_final_index, area_points_
         # date这个tuple中date[0]表示年，date[1]表示月，date[2]表示日，date[3]表示小时,date[4]表示分钟
         cur_date_time = datetime.datetime(*tuple(curr_table[j][2])[:5])  #保留时间到分钟级别
         if(min_time_size==1):
-            cur_date_time.replace(minute=0)  #只有当颗粒度为小时的时候，只保留时间到小时
-        if(cur_date_time < date_hour_min):
-            date_hour_min = cur_date_time
-        if(cur_date_time > date_hour_max):
-            date_hour_max = cur_date_time
+            cur_date_time = cur_date_time.replace(minute=0)  #只有当颗粒度为小时的时候，只保留时间到小时
+        if(cur_date_time < date_time_min):
+            date_time_min = cur_date_time
+        if(cur_date_time > date_time_max):
+            date_time_max = cur_date_time
 
         str_day = str(date[0]) + '-' + str(date[1]) + '-' + str(date[2])   #将日期存成字符串
         day_index = day_dict.get(str_day, -1)
@@ -317,19 +308,6 @@ def get_time_data_list(sub_table, min_final_index, max_final_index, area_points_
         tmp_minute = int((date[4]//min_time_sz)*min_time_sz)
         str_day_time = str_day + '-' + str(date[3]) + '-' + str(tmp_minute) # 将日期+小时存成字符串
         day_time_index = day_time_dict.get(str_day_time, -1)
-        '''if (day_hour_index == -1):  # 表示data_index里面没有这个字段
-            day_hour_dict[str_day_hour] = date_num
-            # 获取时间数据只到小时级别
-            day_info = {'datatime': date[:4], 'posNum': 0, 'negNum': 0}
-            if (sub_table[j][DIRECTION_INDEX] == 1):
-                day_info['posNum'] += 1
-                posSum += 1
-            elif (sub_table[j][DIRECTION_INDEX] == -1):
-                day_info['negNum'] += 1
-                negSum += 1
-            data_list.append(day_info)
-            date_num += 1
-        else:'''
         day_info = data_list[day_time_index]
         if (curr_table[j][DIRECTION_INDEX] == 1):
             if(day_info[num_type1] == '-'):
@@ -345,19 +323,9 @@ def get_time_data_list(sub_table, min_final_index, max_final_index, area_points_
                 day_info[num_type2] += 1
             maxNum = max(maxNum, day_info[num_type2])
             negSum += 1
-
-    '''test2_list = sorted(test2_list,key = itemgetter(LNG_INDEX,LAT_INDEX))
-    count2 = 0
-    for i in range(len(test_list)):
-        if(test_list[i][LNG_INDEX] == test2_list[i][LNG_INDEX] and test_list[i][LAT_INDEX] == test2_list[i][LAT_INDEX]):
-            count2 += 1
-    if(count2 == len(test_list)):
-        print("YES")
-    else:
-        print("NO")'''
     data_list = sorted(data_list, key=itemgetter('datatime'))
     stat_dict = {'pos': {'sum': posSum}, 'neg': {'sum': negSum}}
-    return [data_list, stat_dict, [date_hour_min,date_hour_max], maxNum, day_list]
+    return [data_list, stat_dict, [date_time_min,date_time_max], maxNum, day_list]
 
 
 def get_sum_data_list(sub_table, min_final_index, max_final_index, area_points_list, border_list, area_type, min_time_size, is_corr):
@@ -367,8 +335,8 @@ def get_sum_data_list(sub_table, min_final_index, max_final_index, area_points_l
 
     #time_date_dict = {}
     table_date = sub_table[0][DATE_TIME_INDEX]
-    date_hour_min = datetime.datetime(*tuple(table_date)[0:4])
-    date_hour_max = datetime.datetime(*tuple(table_date)[0:4])
+    date_time_min = datetime.datetime(*tuple(table_date)[0:4])
+    date_time_max = datetime.datetime(*tuple(table_date)[0:4])
 
     for j in range(min_final_index, max_final_index + 1):
         # test2_list.append([sub_table[i][LNG_INDEX],sub_table[i][LAT_INDEX]])
@@ -386,10 +354,10 @@ def get_sum_data_list(sub_table, min_final_index, max_final_index, area_points_l
         #if(time_date_index == -1):
          #   time_date_dict[str_time_date] = str(date[1])+str(date[2])+str(date[3])+str(date[4])
         date_hour = datetime.datetime(*tuple(sub_table[j][2])[:4])
-        if(date_hour<date_hour_min):
-            date_hour_min = date_hour
-        if(date_hour>date_hour_max):
-            date_hour_max = date_hour
+        if(date_hour<date_time_min):
+            date_time_min = date_hour
+        if(date_hour>date_time_max):
+            date_time_max = date_hour
         day_index = date_dict.get(str_day, -1)
         if (day_index == -1):  # 表示data_index里面没有这个字段
             date_dict[str_day] = date_num
@@ -435,7 +403,7 @@ def get_sum_data_list(sub_table, min_final_index, max_final_index, area_points_l
     #     data['negNum'] = data['negNum'] / date_num
 
     stat_dict = {'pos': {'sum': posSum}, 'neg': {'sum': negSum}}
-    return [data_list, stat_dict, [date_hour_min, date_hour_max]]
+    return [data_list, stat_dict, [date_time_min, date_time_max]]
 
 
 def get_date_from_corr(datetmp, min_time_size, is_corr):
@@ -466,8 +434,8 @@ def get_points_in_region(table_arr,type_index_list,area_points_list,border_list,
     points_date_dict = {}
 
     table_date = table_arr[0][0][DATE_TIME_INDEX]
-    date_hour_min = datetime.datetime(*tuple(table_date)[0:4])  #
-    date_hour_max = datetime.datetime(*tuple(table_date)[0:4])
+    date_time_min = datetime.datetime(*tuple(table_date)[0:5])  #
+    date_time_max = datetime.datetime(*tuple(table_date)[0:5])
     max_num, day_dict, day_num, day_list = 0, {}, 0, []
 
     for i in range(table_arr_length):
@@ -487,10 +455,10 @@ def get_points_in_region(table_arr,type_index_list,area_points_list,border_list,
             [data_list, stat_dict, date_hour_list, tmp_num, tmp_day_list] = get_time_data_list(sub_table, min_final_index, max_final_index, area_points_list, border_list, area_type, min_time_size, is_corr)
         elif (data_type == 2):
             [data_list, stat_dict, date_hour_list] = get_sum_data_list(sub_table, min_final_index, max_final_index, area_points_list, border_list, area_type, min_time_size, is_corr)
-        if(date_hour_list[0] < date_hour_min):
-            date_hour_min = date_hour_list[0]
-        if(date_hour_list[1] > date_hour_max):
-            date_hour_max = date_hour_list[1]
+        if(date_hour_list[0] < date_time_min):
+            date_time_min = date_hour_list[0]
+        if(date_hour_list[1] > date_time_max):
+            date_time_max = date_hour_list[1]
         max_num = max(max_num, tmp_num)
         for day in tmp_day_list:
             str_day = str(day[0]) + '-' + str(day[1]) + '-' + str(day[2])
@@ -516,44 +484,17 @@ def get_points_in_region(table_arr,type_index_list,area_points_list,border_list,
         day = day_list[i]
         day_list[i] = [day[0], day[1], day[2], 0]
 
-    '''for i in range(table_arr_length):
-        table = points_info_dict['type' + str(type_index_list[i])]
-        data_time_list = table[0]['datatime']
-        str_day = str(data_time_list[0]) + '-' + str(data_time_list[1]) + '-' + str(data_time_list[2])
-        day_index = day_dict.get(str_day,0)
-        for j in range(day_index):
-            for k in range(24):  #插入24小时空余数据
-                day_info = day_list[j]
-                tmp_day_dict = {'datatime':(day_info[0],day_info[1],day_info[2],k),'posNum':0,'negNum':0}
-                table.insert(j*24+k, tmp_day_dict)'''
-
-
-    '''max_index = len(day_list) - 1
-    date_day = day_list[max_index]
-    date_last_day = datetime.datetime(date_day[0], date_day[1], date_day[2], 0)
-    date_last_day = date_last_day + datetime.timedelta(days = 1)
-    day_list.append([date_last_day.year, date_last_day.month, date_last_day.day, 0])'''
-
-
-
-    '''tmp_list = []
-    for key, value in points_date_dict.items():
-        tmp_list.append([key,value])
-    tmp_list = sorted(tmp_list, key = itemgetter(1))'''
-
-
     date_list = []
+    min_time_sz = int(min_time_size * 60)  #将最小颗粒度转化成分钟
+    tmp_minute = int((date_time_min.minute//min_time_sz)*min_time_sz)
+    date_time_min = date_time_min.replace(minute=tmp_minute)
+    tmp_minute = int((date_time_max.minute//min_time_sz)*min_time_sz)
+    date_time_max = date_time_max.replace(minute=tmp_minute)
+    d_minus = date_time_max - date_time_min
 
-    d_minus = date_hour_max - date_hour_min
-
-    hours = int((d_minus.days * 24 * 60 * 60 + d_minus.seconds) / 3600.0)
-    time_min = date_hour_min.time()
-    t_h = time_min.hour
-    date_min = date_hour_min.date()
-    date_time_min = datetime.datetime(date_min.year, date_min.month, date_min.day, t_h, 0, 0)
+    minutes = int((d_minus.days * 24 * 60 * 60 + d_minus.seconds) / 60.0)
     date_dict, date_info_num = {}, 0
-    min_time_sz = int(min_time_size * 60)  # 将最小颗粒度转化成分钟
-    time_cnt = int(hours * 60 // min_time_sz)  # 计算出一小时中有多少个最小时间颗粒度
+    time_cnt = int(minutes // min_time_sz)  # 计算出一小时中有多少个最小时间颗粒度
     for i in range(time_cnt+1):   #因为要将最大时间也包含进来，所以range参数要加1
         tmp_minute = min_time_sz * i
         datetmp = date_time_min + datetime.timedelta(minutes=tmp_minute)
