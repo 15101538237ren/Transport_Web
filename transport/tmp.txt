@@ -1,0 +1,36 @@
+'''test2_list = sorted(test2_list,key = itemgetter(LNG_INDEX,LAT_INDEX))
+    count2 = 0
+    for i in range(len(test_list)):
+        if(test_list[i][LNG_INDEX] == test2_list[i][LNG_INDEX] and test_list[i][LAT_INDEX] == test2_list[i][LAT_INDEX]):
+            count2 += 1
+    if(count2 == len(test_list)):
+        print("YES")
+    else:
+        print("NO")'''
+
+'''if (day_hour_index == -1):  # 表示data_index里面没有这个字段
+    day_hour_dict[str_day_hour] = date_num
+    # 获取时间数据只到小时级别
+    day_info = {'datatime': date[:4], 'posNum': 0, 'negNum': 0}
+    if (sub_table[j][DIRECTION_INDEX] == 1):
+        day_info['posNum'] += 1
+        posSum += 1
+    elif (sub_table[j][DIRECTION_INDEX] == -1):
+        day_info['negNum'] += 1
+        negSum += 1
+    data_list.append(day_info)
+    date_num += 1
+else:'''
+
+'''count = 0
+test_list = []
+for i in range(len(table)):
+
+    if(slng <= table[i][LNG_INDEX] and table[i][LNG_INDEX] <= elng and elat <= table[i][LAT_INDEX] and table[i][LAT_INDEX] <= slat):
+        count += 1
+        test_list.append([table[i][LNG_INDEX],table[i][LAT_INDEX]])
+print(count)
+print(max_final_index-min_final_index+1)
+test_list = sorted(test_list,key = itemgetter(LNG_INDEX,LAT_INDEX))
+test2_list = []'''
+
