@@ -12,6 +12,7 @@
         var overlays_to_rm=[];
         var line_points_list=[];
         var tmp_attr_name="";
+        var drop_ul;
     </script>
     {% block headscript %}
     {% endblock %}
@@ -145,6 +146,7 @@
         }
         overlays_to_rm=[];
         //reset_corr();
+        drop_ul.style.visibility="visible";
     }
     function area_selection(points_list,overlays_tmp)
     {
@@ -299,7 +301,7 @@
       selected_done.onclick=function(e){
           i_selected_done(div,btn_corr,selected_done,drop_ul)
       };
-      var drop_ul=document.createElement("ul");//创建ul
+      drop_ul=document.createElement("ul");//创建ul
       drop_ul.setAttribute('class','dropdown-menu');
 
       var li_region= document.createElement("li");
