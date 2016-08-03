@@ -8,7 +8,7 @@ from Transport_Web.settings import STATIC_ROOT
 from django.views.decorators.http import require_GET, require_POST
 from transport.direction import *
 import pytz,copy
-from transport.json_handler import generate_option
+from transport.json_handler import generate_option,generate_delay_option
 from operator import itemgetter, attrgetter
 IN_RECTANGLE_AREA = 0
 IN_POLYGON_AREA = 1
@@ -45,9 +45,10 @@ def area_statistics(request):
         min_time_size,is_corr = 1,0
         points_info_dict = single_area_statistic(point_list, point_type, data_type, min_time_size, is_corr)
         data_points_json = json.dumps(points_info_dict, sort_keys=True, indent=4)
-        generate_option(point_type, **points_info_dict)
+        json_file_name='option1.json'
+        generate_option(point_type,json_file_name, **points_info_dict)
         print(data_points_json)
-        addr = '/static/option/option1.json'
+        addr = '/static/option/'+json_file_name
         return success_response(addr)
     elif(type=="multi"): #两个区域进行分析
 
@@ -81,10 +82,11 @@ def area_statistics(request):
         delay_cnt = int(request.GET.get('del_cnt', -1))
         area_list = json.loads(area_list_str)
         min_time_size, is_corr = delay_time, 1
-        corr_dict_json = delay_area_statistic(area_list, point_type, data_type, delay_cnt, min_time_size, is_corr)
-        addr = '/static/option/option1.json'
-        response_info = {'addr': addr, 'corr': corr_dict_json}
-        return success_response(response_info)
+        corr_dict = delay_area_statistic(area_list, point_type, data_type, delay_cnt, min_time_size, is_corr)
+        json_file_name='option_delay_tmp.json'
+        generate_delay_option(point_type,json_file_name, **corr_dict)
+        addr = '/static/option/'+json_file_name
+        return success_response(addr)
 
 #将两个序列的长度变成相同的
 def get_equal_length_lists(points_info_first, points_info_second, type):
@@ -233,8 +235,7 @@ def delay_area_statistic(area_list, point_type, data_type, delay_cnt, min_time_s
                 neg_list2 = points_type_dict['negNum'][i:]
                 r_pair = calc_corr(pos_list1, pos_list2, neg_list1, neg_list2)
             corr_dict[min_time_size * i] = r_pair
-    corr_dict_json = json.dumps(corr_dict, sort_keys=True, indent=4)
-    return corr_dict_json
+    return corr_dict
 
 
 #判断点是否在矩形边界区域内
