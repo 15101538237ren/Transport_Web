@@ -82,12 +82,11 @@ def generate_multi_series_dict(point_type,legend_names,type_of_series,**corr_dic
             item={}
             item["name"]=legend_names[i]
             item["type"]=type_of_series
-            offset = i % 2
-            type_list=corr_dict["type"+str(point_type)][offset]
-            new_data_list=[]
-            for item_i in range(len(type_list)):
-                new_data_list.append([item_i+1,type_list[item_i]])
-            item["data"]=new_data_list
+            type_list_dict=corr_dict["type"+str(point_type)]
+            type_list=[]
+            for (k,v) in type_list_dict.items():
+                type_list.append([k,v[i]])
+            item["data"]=type_list
             ret_arr.append(item)
     else:
         for i in range(1,5):
@@ -96,11 +95,11 @@ def generate_multi_series_dict(point_type,legend_names,type_of_series,**corr_dic
                 item={}
                 item["name"]=legend_names[idx]
                 item["type"]=type_of_series
-                type_list=corr_dict["type"+str(i)][j]
-                new_data_list=[]
-                for item_i in range(len(type_list)):
-                    new_data_list.append([item_i+1,type_list[item_i]])
-                item["data"]=new_data_list
+                type_list_dict=corr_dict["type"+str(i)]
+                type_list=[]
+                for (k,v) in type_list_dict.items():
+                    type_list.append([k,v[j]])
+                item["data"]=type_list
                 ret_arr.append(item)
     return ret_arr
 def generate_multi_option(point_type,json_file_name,plot_type,**corr_dict):
@@ -143,7 +142,7 @@ def generate_delay_series_dict(point_type,legend_names,type_of_series,**series_d
         type_dict=series_dict["type"+str(point_type)]
         type_dict_sorted= sorted(type_dict.iteritems(), key=lambda d:d[0])
         data_list_for_use=[]
-        for (delay_time,corr_list_tmp) in type_dict_sorted.items():
+        for (delay_time,corr_list_tmp) in type_dict_sorted:
             for tmp_i in range(len(corr_list_tmp)):
                 while len(data_list_for_use)<len(corr_list_tmp):
                     data_list_for_use.append([])

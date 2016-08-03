@@ -60,8 +60,7 @@ def area_statistics(request):
 
         #data_points_json = json.dumps(points_info_list, indent=4)
         #print(data_points_json)
-        corr_dict={}
-        json_file_name='option_delay_tmp.json'
+        json_file_name='option_multi_tmp.json'
         generate_multi_option(point_type,json_file_name,"line", **corr_dict)
         addr = '/static/option/'+json_file_name
         return success_response(addr)
