@@ -73,6 +73,47 @@ def area_statistics(request):
         addr = '/static/option/'+json_file_name
         return success_response(addr)
 
+
+
+def make_length_equal(datatime_list1, date_list1, pos_list1, neg_list1, datatime_list2, date_list2, pos_list2, neg_list2):
+    if (datatime_list1[0] < datatime_list2[0]):
+        index = 0
+        while (index < len(datatime_list1) and datatime_list1[index] != datatime_list2[0]):
+            index += 1
+        for j in range(index):
+            datatime_list2.insert(j, datatime_list1[j])
+            date_list2.insert(j, datatime_list1[j])
+            pos_list2.insert(j, 0)
+            neg_list2.insert(j, 0)
+    else:
+        index = 0
+        while (index < len(datatime_list2) and datatime_list2[index] != datatime_list1[0]):
+            index += 1
+        for j in range(index):
+            datatime_list1.insert(j, datatime_list2[j])
+            date_list1.insert(j, datatime_list2[j])
+            pos_list1.insert(j, 0)
+            neg_list1.insert(j, 0)
+    if (datatime_list1[len(datatime_list1) - 1] < datatime_list2[len(datatime_list2) - 1]):
+        index = len(datatime_list2) - 1
+        while (index >= 0 and datatime_list2[index] != datatime_list1[len(datatime_list1) - 1]):
+            index -= 1
+        for j in range(index + 1, len(datatime_list2)):
+            datatime_list1.insert(j, datatime_list2[j])
+            date_list1.insert(j, datatime_list2[j])
+            pos_list1.append(0)
+            neg_list1.append(0)
+    else:
+        index = len(datatime_list1) - 1
+        while (index >= 0 and datatime_list1[index] != datatime_list2[len(datatime_list2) - 1]):
+            index -= 1
+        for j in range(index + 1, len(datatime_list1)):
+            datatime_list2.insert(j, datatime_list1[j])
+            date_list2.insert(j, datatime_list1[j])
+            pos_list2.append(0)
+            neg_list2.append(0)
+    return [pos_list1,pos_list2,neg_list1,neg_list2]
+
 #将两个序列的长度变成相同的
 def get_equal_length_lists(points_info_first, points_info_second, type):
     date_list1 = points_info_first['date_list']
@@ -83,43 +124,8 @@ def get_equal_length_lists(points_info_first, points_info_second, type):
     datatime_list2 = points_info_second['type' + str(type)]['datatime']
     pos_list2 = points_info_second['type' + str(type)]['posNum']
     neg_list2 = points_info_second['type' + str(type)]['negNum']
-    if (date_list1[0] < date_list2[0]):
-        index = 0
-        while (index < len(date_list1) and date_list1[index] != date_list2[0]):
-            index += 1
-        for j in range(index):
-            date_list2.insert(j, date_list1[j])
-            datatime_list2.insert(j, date_list1[j])
-            pos_list2.insert(j, 0)
-            neg_list2.insert(j, 0)
-    else:
-        index = 0
-        while (index < len(date_list2) and date_list2[index] != date_list1[0]):
-            index += 1
-        for j in range(index):
-            date_list1.insert(j, date_list2[j])
-            datatime_list1.insert(j, date_list2[j])
-            pos_list1.insert(j, 0)
-            neg_list1.insert(j, 0)
-    if (date_list1[len(date_list1) - 1] < date_list2[len(date_list2) - 1]):
-        index = len(date_list2) - 1
-        while (index >= 0 and date_list2[index] != date_list1[len(date_list1) - 1]):
-            index -= 1
-        for j in range(index + 1, len(date_list2)):
-            date_list1.append(date_list2[j])
-            datatime_list1.insert(j, date_list2[j])
-            pos_list1.append(0)
-            neg_list1.append(0)
-    else:
-        index = len(date_list1) - 1
-        while (index >= 0 and date_list1[index] != date_list2[len(date_list2) - 1]):
-            index -= 1
-        for j in range(index + 1, len(date_list1)):
-            date_list2.append(date_list1[j])
-            datatime_list2.insert(j, date_list1[j])
-            pos_list2.append(0)
-            neg_list2.append(0)
-    return [pos_list1,pos_list2,neg_list1,neg_list2]
+    #注意在使两个序列等长时，要优先比较每种type的datetime_list，而不能比较date_list，因为是引用，所以会修改date_list使其成为等长，因而后续计算始终date_list相等,而type中的却不一定等长，使得函数失效
+    return make_length_equal(datatime_list1, date_list1, pos_list1, neg_list1, datatime_list2, date_list2, pos_list2, neg_list2)
 
 #计算相关性的值
 def calc_corr(pos_list1,pos_list2,neg_list1,neg_list2):
@@ -144,9 +150,15 @@ def calc_corr(pos_list1,pos_list2,neg_list1,neg_list2):
     print(str(sum_pos_xy) + ' ' + str(sum_pos_x2) + ' ' + str(sum_pos_y2))
     print(str(sum_neg_xy) + ' ' + str(sum_neg_x2) + ' ' + str(sum_neg_y2))
     print('------------------------------------')
-    r_pos_xy = sum_pos_xy / math.sqrt(sum_pos_x2 * sum_pos_y2)
-    r_neg_xy = sum_neg_xy / math.sqrt(sum_neg_x2 * sum_neg_y2)
-    return [r_pos_xy,r_neg_xy]
+    if(abs(math.sqrt(sum_pos_x2 * sum_pos_y2))<EPS):
+        r_pos_xy = 0.0
+    else:
+        r_pos_xy = sum_pos_xy / math.sqrt(sum_pos_x2 * sum_pos_y2)
+    if (abs(math.sqrt(sum_neg_x2 * sum_neg_y2)) < EPS):
+        r_neg_xy = 0.0
+    else:
+        r_neg_xy = sum_neg_xy / math.sqrt(sum_neg_x2 * sum_neg_y2)
+    return [r_pos_xy, r_neg_xy]
 
 #返回table_arr的list和对应的type_list
 def get_table_from_type(point_type):
@@ -202,8 +214,7 @@ def multi_area_statistic(area_points_list, point_type, data_type, min_time_size,
         corr_dict['type'+str(type)] = {}
         tmp_dict = corr_dict['type' + str(type)]
         for i in range(1, len(points_info_list)):
-            [pos_list1, pos_list2, neg_list1, neg_list2] = get_equal_length_lists(points_info_list[0],
-                                                                                  points_info_list[i], type)
+            [pos_list1, pos_list2, neg_list1, neg_list2] = get_equal_length_lists(points_info_list[0],points_info_list[i], type)
             # 下面是相关性分析的计算
             r_pair = calc_corr(pos_list1, pos_list2, neg_list1, neg_list2)
             tmp_dict[i] = r_pair
@@ -470,34 +481,7 @@ def get_points_in_region(table_arr,type_index_list,area_points_list,border_list,
         day = day_list[i]
         day_list[i] = [day[0], day[1], day[2], 0]
 
-    '''for i in range(table_arr_length):
-        table = points_info_dict['type' + str(type_index_list[i])]
-        data_time_list = table[0]['datatime']
-        str_day = str(data_time_list[0]) + '-' + str(data_time_list[1]) + '-' + str(data_time_list[2])
-        day_index = day_dict.get(str_day,0)
-        for j in range(day_index):
-            for k in range(24):  #插入24小时空余数据
-                day_info = day_list[j]
-                tmp_day_dict = {'datatime':(day_info[0],day_info[1],day_info[2],k),'posNum':0,'negNum':0}
-                table.insert(j*24+k, tmp_day_dict)'''
-
-
-    '''max_index = len(day_list) - 1
-    date_day = day_list[max_index]
-    date_last_day = datetime.datetime(date_day[0], date_day[1], date_day[2], 0)
-    date_last_day = date_last_day + datetime.timedelta(days = 1)
-    day_list.append([date_last_day.year, date_last_day.month, date_last_day.day, 0])'''
-
-
-
-    '''tmp_list = []
-    for key, value in points_date_dict.items():
-        tmp_list.append([key,value])
-    tmp_list = sorted(tmp_list, key = itemgetter(1))'''
-
-
     date_list = []
-
     d_minus = date_hour_max - date_hour_min
 
     hours = int((d_minus.days * 24 * 60 * 60 + d_minus.seconds) / 3600.0)
@@ -518,7 +502,7 @@ def get_points_in_region(table_arr,type_index_list,area_points_list,border_list,
         date_info_num += 1
     #points_info_dict = convert_points_info(points_info_dict, table_arr_length)
     # sort dict
-    points_info_dict = get_three_list(points_info_dict, date_dict, type_index_list, min_time_size, is_corr)
+    points_info_dict = get_three_list(points_info_dict, date_dict, date_list, type_index_list, min_time_size, is_corr)
     points_info_dict['day_list'] = day_list
     points_info_dict['max_num'] = max_num
 
@@ -535,29 +519,24 @@ def addEntityToList(dict1,key,date_index,dict2,def_type):
     else:
         dict1[key][date_index] = dict2.get(key,def_type)
 
-def get_three_list(point_dict, date_dict, type_index_list, min_time_size, is_corr):
+def get_three_list(point_dict, date_dict, date_list, type_index_list, min_time_size, is_corr):
     point_info_dict = {}
     for i in type_index_list:
+
         table = point_dict['type' + str(i)]
         table_len = len(table)
         table_info_dict = {'datatime':[], 'posNum':[], 'negNum':[]}
+        for date in date_list:
+            table_info_dict['datatime'].append(date)
+            table_info_dict['posNum'].append(0)
+            table_info_dict['negNum'].append(0)
         for j in range(table_len):
             tmplist = table[j]['datatime']
             date_tmp = datetime.datetime(tmplist[0], tmplist[1], tmplist[2], tmplist[3], tmplist[4])
             table[j]['datatime'] = get_date_from_corr(date_tmp, min_time_size, is_corr)
             date_index = date_dict.get(table[j]['datatime'], -1)
-            if(date_index != -1):
-                addEntityToList(table_info_dict, 'datatime', date_index, table[j], -1)
-                addEntityToList(table_info_dict, 'posNum', date_index, table[j], 0)
-                addEntityToList(table_info_dict, 'negNum', date_index, table[j], 0)
-        j = 0
-        while(j< len(table_info_dict['datatime']) and len(table_info_dict['datatime'][j]) == 0):
-            j += 1
-
-        for k in range(j):
-            table_info_dict['datatime'].pop(0)
-            table_info_dict['posNum'].pop(0)
-            table_info_dict['negNum'].pop(0)
+            table_info_dict['posNum'][date_index] = table[j].get('posNum',0)
+            table_info_dict['negNum'][date_index] = table[j].get('negNum', 0)
 
         point_info_dict['type' + str(i)] = table_info_dict
     return point_info_dict
