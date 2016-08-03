@@ -82,8 +82,12 @@ def generate_multi_series_dict(point_type,legend_names,type_of_series,**corr_dic
             item={}
             item["name"]=legend_names[i]
             item["type"]=type_of_series
-            offset = i%2
-            item["data"]=corr_dict["type"+str(point_type)][offset]
+            offset = i % 2
+            type_list=corr_dict["type"+str(point_type)][offset]
+            new_data_list=[]
+            for item_i in range(len(type_list)):
+                new_data_list.append([item_i+1,type_list[item_i]])
+            item["data"]=new_data_list
             ret_arr.append(item)
     else:
         for i in range(1,5):
@@ -92,7 +96,11 @@ def generate_multi_series_dict(point_type,legend_names,type_of_series,**corr_dic
                 item={}
                 item["name"]=legend_names[idx]
                 item["type"]=type_of_series
-                item["data"]=corr_dict["type"+str(i)][j]
+                type_list=corr_dict["type"+str(i)][j]
+                new_data_list=[]
+                for item_i in range(len(type_list)):
+                    new_data_list.append([item_i+1,type_list[item_i]])
+                item["data"]=new_data_list
                 ret_arr.append(item)
     return ret_arr
 def generate_multi_option(point_type,json_file_name,plot_type,**corr_dict):
