@@ -76,12 +76,10 @@ def area_statistics(request):
         response_info = {'addr':addr,'corr':corr_list}
         return success_response(response_info)
     elif(type=='delay'):
-        area_list_str = request.POST.get('point_list', -2)
         delay_time = float(request.GET.get('del_time', -1))
         delay_cnt = int(request.GET.get('del_cnt', -1))
-        area_list = json.loads(area_list_str)
         min_time_size, is_corr = delay_time, 1
-        corr_dict_json = delay_area_statistic(area_list, point_type, data_type, delay_cnt, min_time_size, is_corr)
+        corr_dict_json = delay_area_statistic(point_list, point_type, data_type, delay_cnt, min_time_size, is_corr)
         addr = '/static/option/option1.json'
         response_info = {'addr': addr, 'corr': corr_dict_json}
         return success_response(response_info)
@@ -259,18 +257,6 @@ def point_is_in_area(area_points_list, border_list, point,type):
 
 def get_time_data_list(sub_table, min_final_index, max_final_index, area_points_list, border_list, area_type, min_time_size, is_corr):
     data_list, day_list, day_dict, day_time_dict, day_num, date_num = [], [], {}, {}, 0, 0
-    '''count = 0
-    test_list = []
-    for i in range(len(table)):
-
-        if(slng <= table[i][LNG_INDEX] and table[i][LNG_INDEX] <= elng and elat <= table[i][LAT_INDEX] and table[i][LAT_INDEX] <= slat):
-            count += 1
-            test_list.append([table[i][LNG_INDEX],table[i][LAT_INDEX]])
-    print(count)
-    print(max_final_index-min_final_index+1)
-    test_list = sorted(test_list,key = itemgetter(LNG_INDEX,LAT_INDEX))
-    test2_list = []'''
-
     posSum, negSum, maxNum = 0, 0, 0
     num_type1, num_type2 = 'posNum', 'negNum'
     table_date = sub_table[0][DATE_TIME_INDEX]
@@ -317,19 +303,7 @@ def get_time_data_list(sub_table, min_final_index, max_final_index, area_points_
         tmp_minute = int((date[4]//min_time_sz)*min_time_sz)
         str_day_time = str_day + '-' + str(date[3]) + '-' + str(tmp_minute) # 将日期+小时存成字符串
         day_time_index = day_time_dict.get(str_day_time, -1)
-        '''if (day_hour_index == -1):  # 表示data_index里面没有这个字段
-            day_hour_dict[str_day_hour] = date_num
-            # 获取时间数据只到小时级别
-            day_info = {'datatime': date[:4], 'posNum': 0, 'negNum': 0}
-            if (sub_table[j][DIRECTION_INDEX] == 1):
-                day_info['posNum'] += 1
-                posSum += 1
-            elif (sub_table[j][DIRECTION_INDEX] == -1):
-                day_info['negNum'] += 1
-                negSum += 1
-            data_list.append(day_info)
-            date_num += 1
-        else:'''
+
         day_info = data_list[day_time_index]
         if (curr_table[j][DIRECTION_INDEX] == 1):
             if(day_info[num_type1] == '-'):
@@ -345,16 +319,6 @@ def get_time_data_list(sub_table, min_final_index, max_final_index, area_points_
                 day_info[num_type2] += 1
             maxNum = max(maxNum, day_info[num_type2])
             negSum += 1
-
-    '''test2_list = sorted(test2_list,key = itemgetter(LNG_INDEX,LAT_INDEX))
-    count2 = 0
-    for i in range(len(test_list)):
-        if(test_list[i][LNG_INDEX] == test2_list[i][LNG_INDEX] and test_list[i][LAT_INDEX] == test2_list[i][LAT_INDEX]):
-            count2 += 1
-    if(count2 == len(test_list)):
-        print("YES")
-    else:
-        print("NO")'''
     data_list = sorted(data_list, key=itemgetter('datatime'))
     stat_dict = {'pos': {'sum': posSum}, 'neg': {'sum': negSum}}
     return [data_list, stat_dict, [date_hour_min,date_hour_max], maxNum, day_list]
@@ -362,13 +326,14 @@ def get_time_data_list(sub_table, min_final_index, max_final_index, area_points_
 
 def get_sum_data_list(sub_table, min_final_index, max_final_index, area_points_list, border_list, area_type, min_time_size, is_corr):
 
+
+
+
     data_list, hour_dict, hour_num, date_dict, date_num = [], {}, 0, {}, 0
     posSum, negSum = 0, 0
-
-    #time_date_dict = {}
     table_date = sub_table[0][DATE_TIME_INDEX]
-    date_hour_min = datetime.datetime(*tuple(table_date)[0:4])
-    date_hour_max = datetime.datetime(*tuple(table_date)[0:4])
+    date_hour_min = datetime.datetime(*tuple(table_date)[0:5])
+    date_hour_max = datetime.datetime(*tuple(table_date)[0:5])
 
     for j in range(min_final_index, max_final_index + 1):
         # test2_list.append([sub_table[i][LNG_INDEX],sub_table[i][LAT_INDEX]])
@@ -419,21 +384,7 @@ def get_sum_data_list(sub_table, min_final_index, max_final_index, area_points_l
             elif (sub_table[j][DIRECTION_INDEX] == -1):
                 hour_info['negNum'] += 1
                 negSum += 1
-
-    '''test2_list = sorted(test2_list,key = itemgetter(LNG_INDEX,LAT_INDEX))
-    count2 = 0
-    for i in range(len(test_list)):
-        if(test_list[i][LNG_INDEX] == test2_list[i][LNG_INDEX] and test_list[i][LAT_INDEX] == test2_list[i][LAT_INDEX]):
-            count2 += 1
-    if(count2 == len(test_list)):
-        print("YES")
-    else:
-        print("NO")'''
     data_list = sorted(data_list, key=itemgetter('datatime'))
-    # for data in data_list:
-    #     data['posNum'] = data['posNum'] / date_num
-    #     data['negNum'] = data['negNum'] / date_num
-
     stat_dict = {'pos': {'sum': posSum}, 'neg': {'sum': negSum}}
     return [data_list, stat_dict, [date_hour_min, date_hour_max]]
 
