@@ -38,7 +38,8 @@ def area_statistics(request):
     data_type = int(request.GET.get('data_type', -1))  #表示的是采用哪种json输出数据格式显示
     point_type = int(request.GET.get('point_type', 1))  #0:全部，1:应急车道，2，3，4...
     type = request.GET.get('region_type','')
-    point_list = json.loads(request.POST.get('point_list',-2))
+    point_list_tmp=request.POST.get('point_list',u'').encode("utf-8")
+    point_list = json.loads(point_list_tmp)
 
     #单独的区域进行分析
     if(type == "single"):
@@ -77,12 +78,10 @@ def area_statistics(request):
         response_info = {'addr':addr,'corr':corr_list}
         return success_response(response_info)
     elif(type=='delay'):
-        area_list_str = request.POST.get('point_list', -2)
         delay_time = float(request.GET.get('del_time', -1))
         delay_cnt = int(request.GET.get('del_cnt', -1))
-        area_list = json.loads(area_list_str)
         min_time_size, is_corr = delay_time, 1
-        corr_dict = delay_area_statistic(area_list, point_type, data_type, delay_cnt, min_time_size, is_corr)
+        corr_dict = delay_area_statistic(point_list, point_type, data_type, delay_cnt, min_time_size, is_corr)
         json_file_name='option_delay_tmp.json'
         generate_delay_option(point_type,json_file_name, **corr_dict)
         addr = '/static/option/'+json_file_name
