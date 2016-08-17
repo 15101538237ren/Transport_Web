@@ -614,7 +614,7 @@ def showpath(request):
     noise_invisible=int(request.GET.get("noise_invisible",0))
     split_show = int(request.GET.get("split_show", 0))
     max_delay_cnt=24*2
-    delay_list=[]
+    delay_list=[0.1,0.2,0.3,0.4]
     for dl in range(max_delay_cnt):
         delay_list.append(round(float(dl*0.5),2))
     delay_times=range(1,25)
