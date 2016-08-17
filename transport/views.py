@@ -149,7 +149,7 @@ def get_sum_data_list(sub_table, min_final_index, max_final_index, area_points_l
     data_list, hour_dict, hour_num, date_dict, date_num = [], {}, 0, {}, 0
     posSum, negSum = 0, 0
 
-
+    time_date_dict = {}
 
     for j in range(min_final_index, max_final_index + 1):
         # test2_list.append([sub_table[i][LNG_INDEX],sub_table[i][LAT_INDEX]])
@@ -159,6 +159,14 @@ def get_sum_data_list(sub_table, min_final_index, max_final_index, area_points_l
         date = sub_table[j][DATE_TIME_INDEX]  # 这是date的tuple
         # date这个tuple中date[0]表示年，date[1]表示月，date[2]表示日，date[3]表示小时
         str_day = str(date[0]) + str(date[1]) + str(date[2])  # 将日期存成字符串
+
+        str_time_date = str(date[3]) +  ':' + str(date[4]) + '\n' + str(date[1]) + '/' + str(date[2])
+
+        time_date_index = time_date_dict.get(str_time_date, -1)
+
+        if(time_date_index == -1):
+            time_date_dict[str_time_date] = str(date[1])+str(date[2])+str(date[3])+str(date[4])
+
         day_index = date_dict.get(str_day, -1)
         if (day_index == -1):  # 表示data_index里面没有这个字段
             date_dict[str_day] = date_num
@@ -204,7 +212,7 @@ def get_sum_data_list(sub_table, min_final_index, max_final_index, area_points_l
     #     data['negNum'] = data['negNum'] / date_num
 
     stat_dict = {'pos': {'sum': posSum}, 'neg': {'sum': negSum}}
-    return [data_list, stat_dict]
+    return [data_list, stat_dict, time_date_dict]
 
 
 #获取在矩形区域内的所有数据点
@@ -216,6 +224,8 @@ def get_points_in_region(table_arr,area_points_list,border_list,area_type,data_t
     points_info_dict = {}
     table_arr_length = len(table_arr)
     points_info_dict['statistic'] = {}
+    points_info_dict['date_list'] = []
+    points_date_dict = {}
     for i in range(table_arr_length):
         table = table_arr[i]
         #得到一种违章类型的list,之前在helper中处理数据时就已经按照先经度，后纬度的顺序排好序了
@@ -226,16 +236,23 @@ def get_points_in_region(table_arr,area_points_list,border_list,area_type,data_t
         min_final_index = lower_bound_search(sub_table, 0, len(sub_table), border_list[2], LAT_INDEX)
         max_final_index = upper_bound_search(sub_table, 0, len(sub_table), border_list[3], LAT_INDEX)-1
 
-        data_list, stat_dict = [], {}
+        data_list, stat_dict, date_dict = [], {}, {}
         if (data_type == 0):
             pass
         elif (data_type == 1):
-            [data_list, stat_dict] = get_time_data_list(sub_table, min_final_index, max_final_index, area_points_list, border_list, area_type)
+            [data_list, stat_dict, date_dict] = get_time_data_list(sub_table, min_final_index, max_final_index, area_points_list, border_list, area_type)
         elif (data_type == 2):
-            [data_list, stat_dict] = get_sum_data_list(sub_table, min_final_index, max_final_index, area_points_list, border_list, area_type)
-
+            [data_list, stat_dict, date_dict] = get_sum_data_list(sub_table, min_final_index, max_final_index, area_points_list, border_list, area_type)
+        for key,value in date_dict.items():
+            if(points_date_dict.get(key,-1) == -1):
+                points_date_dict[key] = value
         points_info_dict['type' + str(i + 1)] = data_list
         points_info_dict['statistic']['type' + str(i + 1)] = stat_dict
+    tmp_list = []
+    for key, value in points_date_dict.items():
+        tmp_list.append([key,value])
+    tmp_list = sorted(tmp_list, key = itemgetter(1))
+    points_info_dict['date_list'] = tmp_list
     return points_info_dict
 
 
