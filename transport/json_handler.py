@@ -195,6 +195,30 @@ def generate_option(point_type,json_file_name,plot_type,**points_info_dict):
                                           **points_info_dict)
     put_data_into_json(option, out_option_file_path, title=title_name, legend_names=legend_names,
                        xAxisData=datelist_data, seriesDictList=seriesDictList)
+def generate_series_dict_model(point_type,legend_names,plot_type,datelist_data,**series_dict):
+    ret_arr=[]
+    item={}
+    item["name"]=legend_names[point_type]
+    item["type"]=plot_type
+    item["data"]=series_dict["type"+str(point_type)]
+    mark_point={}
+    mark_point["data"]=[{"type": "max", "name": "最大值"}]
+    item["markPoint"]=mark_point
+    ret_arr.append(item)
+    return ret_arr
+#生成模拟模型用可视化结果
+def generate_model_option(point_type,json_file_name,plot_type,**points_info_dict):
+    option_origin_path = OPTION_ROOT_DIR + os.sep + "model_origin.json"
+    option = get_json_template_from(option_origin_path)
+    out_option_file_path = OPTION_ROOT_DIR + os.sep + json_file_name
+    title_list=["举报量随时间变化","拥堵随时间变化"]
+    title_name =title_list[point_type]
+    datelist_data = points_info_dict["datatime"]
+    legend_names = title_list
+    seriesDictList = generate_series_dict_model(point_type, legend_names,plot_type, datelist_data,
+                                          **points_info_dict)
+    put_data_into_json(option, out_option_file_path, title=title_name, legend_names=legend_names,
+                       xAxisData=datelist_data, seriesDictList=seriesDictList)
 if __name__ == '__main__':
     option=generate_option_template(title=True,tooltip=False,dataZoom=True,legend=True,toolbox=True,grid=True,xAxis=True,yAxis=True,series=True)
 

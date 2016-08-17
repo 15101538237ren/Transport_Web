@@ -7,8 +7,9 @@ from Transport_Web.helpers import *
 from Transport_Web.settings import STATIC_ROOT
 from django.views.decorators.http import require_GET, require_POST
 from transport.direction import *
+from os.path import normpath,join
 import pytz,copy
-from transport.json_handler import generate_option,generate_delay_option,generate_multi_option
+from transport.json_handler import generate_option,generate_delay_option,generate_multi_option,generate_model_option
 from operator import itemgetter, attrgetter
 IN_RECTANGLE_AREA = 0
 IN_POLYGON_AREA = 1
@@ -46,8 +47,14 @@ def area_statistics(request):
         min_time_size,is_corr = 1,0
         points_info_dict = single_area_statistic(point_list, point_type, data_type, min_time_size, is_corr)
         data_points_json = json.dumps(points_info_dict, sort_keys=True, indent=4)
-        json_file_name='option1.json'
-        generate_option(point_type,json_file_name,"line", **points_info_dict)
+        json_file_name='option_model_tmp.json'
+        data_file_path=normpath(join(BASE_DIR,'static','option')) + os.sep + "data.json"
+        data_file=open(data_file_path,"r")
+        json_str=data_file.read()
+        data_file.close()
+        json_dict=json.loads(json_str)
+        #generate_option(point_type,json_file_name,"line", **points_info_dict)
+        generate_model_option(0,json_file_name,"line", **json_dict)
         print(data_points_json)
         addr = '/static/option/'+json_file_name
         return success_response(addr)
