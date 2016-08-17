@@ -54,6 +54,7 @@ def area_statistics(request):
         data_file.close()
         json_dict=json.loads(json_str)
         #generate_option(point_type,json_file_name,"line", **points_info_dict)
+        #如果看拥堵,第一个改成0,如果看举报,第一个参数改成1
         generate_model_option(0,json_file_name,"line", **json_dict)
         print(data_points_json)
         addr = '/static/option/'+json_file_name
