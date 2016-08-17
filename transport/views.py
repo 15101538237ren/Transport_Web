@@ -47,16 +47,18 @@ def area_statistics(request):
         min_time_size,is_corr = 1,0
         points_info_dict = single_area_statistic(point_list, point_type, data_type, min_time_size, is_corr)
         data_points_json = json.dumps(points_info_dict, sort_keys=True, indent=4)
+        #generate_option(point_type,json_file_name,"line", **points_info_dict)
+
         json_file_name='option_model_tmp.json'
         data_file_path=normpath(join(BASE_DIR,'static','option')) + os.sep + "data.json"
         data_file=open(data_file_path,"r")
         json_str=data_file.read()
         data_file.close()
         json_dict=json.loads(json_str)
-        #generate_option(point_type,json_file_name,"line", **points_info_dict)
         #如果看拥堵,第一个改成0,如果看举报,第一个参数改成1
         generate_model_option(0,json_file_name,"line", **json_dict)
-        print(data_points_json)
+
+        #print(data_points_json)
         addr = '/static/option/'+json_file_name
         return success_response(addr)
     elif(type=="multi"): #两个区域进行分析
