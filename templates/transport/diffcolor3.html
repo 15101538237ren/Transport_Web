@@ -1,0 +1,47 @@
+{% extends "transport/diff_color_base3.html" %}
+{% load static from staticfiles %}
+{% block title %}点标注结果{% endblock %}
+{% block headscript %}
+
+{% endblock %}
+{% block endscript %}
+<script type="text/javascript">
+     var myModal=$("#modal_body");
+     var echart_body=$("#echart_body");
+     echart_body.hide();
+     var modal_dialog=$("#modal_dialog");
+     var myChart = echarts.init(document.getElementById('echart_body'));
+     var modal_inner=$("#modal_inner");
+</script>
+<script type="text/javascript">
+    function handle_result_from_json(result)
+    {
+        var addr=result.message;
+        if(typeof addr == "object"){
+            var corr_list = addr.corr;
+            var str_corr = "";
+            for(var i=0;i<corr_list.length;i++){
+                str_corr += ("i="+i+"  pos_corr="+corr_list[i][0]+"  neg_corr="+corr_list[i][1]+"\n");
+            }
+            alert(str_corr);
+            addr = addr.addr;
+        }
+        else {
+            $.get(addr).done(function (rtn_json) {
+            myModal.css("height", "800px");
+            myModal.css("weight", "1200px");
+            modal_dialog.css("height", "800px");
+            modal_dialog.css("weight", "1200px");
+            echart_body.css("height", "800px");
+            echart_body.css("weight", "1200px");
+            modal_inner.hide();
+            echart_body.show();
+            //JSON.parse(rtn_json);
+            myChart.setOption(rtn_json);
+            myModal.modal('show');
+        });
+        }
+    }
+</script>
+{% endblock %}
+

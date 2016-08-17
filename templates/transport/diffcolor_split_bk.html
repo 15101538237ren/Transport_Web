@@ -1,52 +1,56 @@
 {% extends "transport/diffcolor_base.html" %}
 {% load static from staticfiles %}
-{% block title %}点标注结果（总图）{% endblock %}
+{% block title %}点标注结果（顺逆时针分开）{% endblock %}
 {% block headscript %}
     <style>
     #pie_chart1{
             width:1100px;
             height:630px;
             text-align:center;
-        }
-        .bar_chart_div{
-            width:1100px;
-            height:630px;
-        }
-        #bar_chart1{
-            width:1100px;
-            height:600px;
-        }
-        #bar_controller{
-            width:1100px;
-            height:30px;
-            text-align:center;
-        }
+    }
+    .bar_chart_div{
+        width:1100px;
+        height:630px;
+    }
+    #bar_chart1{
+        width:1100px;
+        height:300px;
+    }
+    #bar_chart2{
+        width:1100px;
+        height:300px;
+    }
+    #bar_controller{
+        width:1100px;
+        height:30px;
+        text-align:center;
+    }
     </style>
 {% endblock %}
 {% block modalbody %}
           <div class="bar_chart_div">
-            <div id="bar_controller"></div>
-            <div id="bar_chart1">
-            </div>
+          <div id="bar_controller"></div>
+          <div id="bar_chart1"></div>
+          <div id="bar_chart2"></div>
           </div>
-          <div id="pie_chart1">
-            </div>
+          <div id="pie_chart1"></div>
 {% endblock %}
 {% block endscript %}
 
 <script type="text/javascript">
-            var barChart1;
             var echarts;
+            var barChart1;
+            var barChart2;
             var pieChart1;
+
             var barChart_ele1 = document.getElementById('bar_chart1');
+            var barChart_ele2 = document.getElementById('bar_chart2');
             var pieChart_ele1 = document.getElementById('pie_chart1');
 
             require(
                 [
                     'echarts',
-                    'echarts/chart/line',
                     'echarts/chart/bar',
-                    'echarts/chart/line',
                     'echarts/chart/pie'
                 ],
                 function (ec) {
@@ -54,19 +58,42 @@
                     barChart1 = ec.init(barChart_ele1,curTheme);
                     barChart1.setOption(option_bar1,true);
 
+                    barChart2 = ec.init(barChart_ele2,curTheme);
+                    barChart2.setOption(option_bar2,true);
+
+                    barChart1.connect([barChart2]);
+                    barChart2.connect([barChart1]);
+
+                    setTimeout(function (){
+                        window.onresize = function () {
+                            barChart1.resize();
+                            barChart2.resize();
+                        }
+                    },200);
+
                     pieChart1= ec.init(pieChart_ele1,curTheme);
                     pieChart1.setOption(option_pie1,true);
 
-                    var divLegends = $('#bar_controller');
+
                     legend1 = barChart1.chart['bar'].component.legend;
+                    legend2 = barChart2.chart['bar'].component.legend;
+
                     $(option_bar1.legend.data).each(function(i, l){
                         var group_no=i % type_count;
                         if (l!="") {
                             group_by_type[group_no].push(l);
                             all_select_group.push(l);
                         }
-                        legend1.setSelected(l,false);
                     });
+
+                    $(option_bar2.legend.data).each(function(i, l){
+                        var group_no=i % type_count;
+                        if (l!="") {
+                            group_by_type[group_no].push(l);
+                            all_select_group.push(l);
+                        }
+                    });
+
 
                     for (group_idx;group_idx<group_len;group_idx++)
                     {
@@ -90,8 +117,9 @@
                         var neg_txt=innertxt+neg_post;
 
                         option_bar1.legend.selected[pos_txt]= checked;
-                        option_bar1.legend.selected[neg_txt]= checked;
-                        refresh_data(option_bar1,"bar");
+                        option_bar2.legend.selected[neg_txt]= checked;
+                        refresh_data(option_bar1,"bar",1);
+                        refresh_data(option_bar2,"bar",2);
                     });
 
 
@@ -103,13 +131,19 @@
                         {
                             checkbox_list[tmp_index].checked=checked;
                         }
-                        var selected_name_hash=option_bar1.legend.selected;
+                        var selected_name_hash1=option_bar1.legend.selected;
                         var key_of_hash;
-                        for (key_of_hash in selected_name_hash)
+                        for (key_of_hash in selected_name_hash1)
                         {
                             option_bar1.legend.selected[key_of_hash]= checked;
                         }
-                        refresh_data(option_bar1,"bar");
+                        var selected_name_hash2=option_bar2.legend.selected;
+                        for (key_of_hash in selected_name_hash2)
+                        {
+                            option_bar2.legend.selected[key_of_hash]= checked;
+                        }
+                        refresh_data(option_bar1,"bar",1);
+                        refresh_data(option_bar2,"bar",2);
                     });
 
                 }
@@ -121,6 +155,7 @@
             function selectChange(value){
                 curTheme = value;
                 barChart1.showLoading();
+                barChart2.showLoading();
                 $(themeSelector).val(curTheme);
                 if (curTheme != 'default') {
                     window.location.hash = value;
@@ -137,11 +172,13 @@
             }
             function refreshTheme(){
                 barChart1.hideLoading();
+                barChart2.hideLoading();
                 barChart1.setTheme(curTheme);
+                barChart2.setTheme(curTheme);
             }
-            function refresh_data(option_new,type){
+            function refresh_data(option_new,type,bar_val){
 
-                if (type=="bar")
+                if (type=="bar"&&bar_val==1)
                 {
                     if (barChart1 && barChart1.dispose) {
                         barChart1.dispose();
@@ -149,6 +186,15 @@
                     barChart1 = echarts.init(barChart_ele1, curTheme);
                     window.onresize = barChart1.resize;
                     barChart1.setOption(option_new, true);
+                }
+                else if (type=="bar"&&bar_val==2)
+                {
+                    if (barChart2 && barChart2.dispose) {
+                        barChart2.dispose();
+                    }
+                    barChart2 = echarts.init(barChart_ele2, curTheme);
+                    window.onresize = barChart2.resize;
+                    barChart2.setOption(option_new, true);
                 }
                 else
                 {
@@ -165,6 +211,9 @@
     function handle_result_from_json(result)
     {
         rtn_json=JSON.parse(result.message);
+{#        var date_list=rtn_json.date_list;#}
+{#        option_bar1.xAxis[0].data=date_list;#}
+{#        option_bar2.xAxis[0].data=date_list;#}
         statistic=rtn_json.statistic;
         statistic_list=[statistic.type1,statistic.type2,statistic.type3,statistic.type4];
         for(var p = 0; p < 2*statistic_list.length; p++) {
@@ -179,9 +228,10 @@
             }
              option_pie1.series[0].data[p].value=value_data;
         }
-        refresh_data(option_pie1,"pie");
+        refresh_data(option_pie1,"pie",0);
+
         type_data_list=[rtn_json.type1,rtn_json.type2,rtn_json.type3,rtn_json.type4];
-        for(var i = 0; i < 2*type_data_list.length; i++){
+        for(var i = 0; i < type_data_list.length; i++){
             option_bar1.series[i].data=(function () {
                                 var d = [];
                                 var idx=i % 4;
@@ -191,13 +241,25 @@
                                     var object_now=data_now[j];
                                     var date_object=object_now.datatime;
                                     var value_data=-1;
-                                    if (i < 4)
-                                    {
-                                        value_data=object_now.negNum;
-                                    }
-                                    else {
-                                        value_data=object_now.posNum;
-                                    }
+                                    value_data=object_now.negNum;
+                                    var date_of_data=new Date(date_object[0], date_object[1]-1, date_object[2], date_object[3], 0 , 0);
+                                    d.push([
+                                        date_of_data,
+                                        value_data
+                                    ]);
+                                }
+                                return d;
+                            })();
+            option_bar2.series[i].data=(function () {
+                                var d = [];
+                                var idx=i % 4;
+                                var data_now=type_data_list[idx];
+                                var len_data_now=data_now.length;
+                                for(var j = 0; j < len_data_now; j++){
+                                    var object_now=data_now[j];
+                                    var date_object=object_now.datatime;
+                                    var value_data=-1;
+                                    value_data=object_now.posNum;
                                     var date_of_data=new Date(date_object[0], date_object[1]-1, date_object[2], date_object[3], 0 , 0);
                                     d.push([
                                         date_of_data,
@@ -207,9 +269,9 @@
                                 return d;
                             })()
         }
-        refresh_data(option_bar1,"bar");
+        refresh_data(option_bar1,"bar",1);
+        refresh_data(option_bar2,"bar",2);
         myModal.modal('show');
     }
 </script>
 {% endblock %}
-

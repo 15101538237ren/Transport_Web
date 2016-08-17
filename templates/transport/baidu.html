@@ -84,8 +84,8 @@
     //map.setMapStyle({style:'googlelite'});
     map.centerAndZoom(new BMap.Point(116.404, 39.915), 12);     // 初始化地图,设置中心点坐标和地图级别
     map.enableScrollWheelZoom();                        //启用滚轮放大缩小
-    var top_left_control = new BMap.ScaleControl({anchor: BMAP_ANCHOR_TOP_LEFT});// 左上角，添加比例尺
-	var top_left_navigation = new BMap.NavigationControl();  //左上角，添加默认缩放平移控件
+    var top_left_control = new BMap.ScaleControl({anchor: BMAP_ANCHOR_BOTTOM_LEFT});// 左上角，添加比例尺
+	var top_left_navigation = new BMap.NavigationControl({anchor: BMAP_ANCHOR_BOTTOM_LEFT});  //左上角，添加默认缩放平移控件
     map.addControl(top_left_control);
     map.addControl(top_left_navigation);
     map.enableKeyboard();
@@ -181,9 +181,11 @@
                         if (result.code == 0) {
                             alert("区域内有" + result.message + "个点!");
                             //overlays.push(e.overlay);
+                            map.removeOverlay(e.overlay);
                         }
                         else {
                             alert(result.message);
+                            map.removeOverlay(e.overlay);
                         }
                     });
                 },

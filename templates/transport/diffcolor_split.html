@@ -43,17 +43,26 @@
             var barChart2;
             var pieChart1;
 
+            var bar1_start;
+            var bar2_start;
+            var bar1_end;
+            var bar2_end;
+
             var barChart_ele1 = document.getElementById('bar_chart1');
             var barChart_ele2 = document.getElementById('bar_chart2');
             var pieChart_ele1 = document.getElementById('pie_chart1');
 
+
             require(
                 [
                     'echarts',
+                    'echarts/chart/line',
                     'echarts/chart/bar',
+                    'echarts/chart/line',
                     'echarts/chart/pie'
                 ],
                 function (ec) {
+                    var ecConfig = require('echarts/config');
                     echarts=ec;
                     barChart1 = ec.init(barChart_ele1,curTheme);
                     barChart1.setOption(option_bar1,true);
@@ -61,15 +70,54 @@
                     barChart2 = ec.init(barChart_ele2,curTheme);
                     barChart2.setOption(option_bar2,true);
 
-                    barChart1.connect(barChart2);
-                    barChart2.connect(barChart1);
+                    bar1_start=option_bar1.dataZoom.start;
+                    bar2_start=option_bar2.dataZoom.start;
+                    bar1_end=option_bar1.dataZoom.end;
+                    bar2_end=option_bar2.dataZoom.end;
 
-                    setTimeout(function (){
-                        window.onresize = function () {
-                            barChart1.resize();
-                            barChart2.resize();
-                        }
-                    },200);
+{#                    barChart1.connect([barChart2]);#}
+{#                    barChart2.connect([barChart1]);#}
+
+{#                    setInterval(function (){#}
+{#                        var bar1_start_now=option_bar1.dataZoom.start;#}
+{#                        var bar2_start_now=option_bar2.dataZoom.start;#}
+{#                        var bar1_end_now=option_bar1.dataZoom.end;#}
+{#                        var bar2_end_now=option_bar2.dataZoom.end;#}
+{#                        var changed=false;#}
+{#                        if (bar1_start_now!=bar1_start)#}
+{#                        {#}
+{#                            bar1_start=bar1_start_now;#}
+{#                            bar2_start=bar1_start_now;#}
+{#                            option_bar2.dataZoom.start=bar1_start;#}
+{#                            changed=true;#}
+{#                        }#}
+{#                        if (bar2_start_now!=bar2_start)#}
+{#                        {#}
+{#                            bar1_start=bar2_start_now;#}
+{#                            bar2_start=bar2_start_now;#}
+{#                            option_bar1.dataZoom.start=bar2_start;#}
+{#                            changed=true;#}
+{#                        }#}
+{#                        if (bar1_end_now!=bar1_end)#}
+{#                        {#}
+{#                            bar1_end=bar1_end_now;#}
+{#                            bar2_end=bar1_end_now;#}
+{#                            option_bar2.dataZoom.end=bar1_end;#}
+{#                            changed=true;#}
+{#                        }#}
+{#                        if (bar2_end_now!=bar2_end)#}
+{#                        {#}
+{#                            bar1_end=bar2_end_now;#}
+{#                            bar2_end=bar2_end_now;#}
+{#                            option_bar1.dataZoom.end=bar2_end;#}
+{#                            changed=true;#}
+{#                        }#}
+{#                        if (changed==true)#}
+{#                        {#}
+{#                            refresh_data(option_bar1,"bar",1);#}
+{#                            refresh_data(option_bar2,"bar",2);#}
+{#                        }#}
+{#                    },1000);#}
 
                     pieChart1= ec.init(pieChart_ele1,curTheme);
                     pieChart1.setOption(option_pie1,true);
@@ -87,6 +135,8 @@
                     });
 
                     $(option_bar2.legend.data).each(function(i, l){
+                        var color_now = legend2.getColor(l);
+                        var light_color=getLightColor(color_now,0.7);
                         var group_no=i % type_count;
                         if (l!="") {
                             group_by_type[group_no].push(l);
@@ -211,6 +261,35 @@
     function handle_result_from_json(result)
     {
         rtn_json=JSON.parse(result.message);
+{#        /*var date_list=rtn_json.date_list;#}
+{#        option_bar1.xAxis[0].data=date_list;#}
+{#        option_bar2.xAxis[0].data=date_list; */#}
+{#        var daylist=rtn_json.day_list;#}
+{#        var y_max=rtn_json.max_num;#}
+{#        var data_of_markline=[];#}
+{#        for(var day = 0; day < daylist.length; day++) {#}
+{#            var ele=[];#}
+{#            var new_day=new Date(daylist[day][0], daylist[day][1]-1, daylist[day][2], daylist[day][3], 0 , 0);#}
+{#            var tmp_dic1={};#}
+{#            tmp_dic1["value"]=new_day;#}
+{#            tmp_dic1["x"]=new_day;#}
+{#            tmp_dic1["y"]=0;#}
+{#            tmp_dic1["valueIndex"]=0;#}
+{#            ele.push(tmp_dic1);#}
+{#            var tmp_dic={};#}
+{#            tmp_dic["x"]=new_day;#}
+{#            tmp_dic["y"]=y_max;#}
+{#            tmp_dic["valueIndex"]=0;#}
+{#            ele.push(tmp_dic);#}
+{#            data_of_markline.push(ele);#}
+{#        }#}
+{#        option_bar1.series[0].markLine.data=data_of_markline;#}
+{#        option_bar1.yAxis[0].min=y_max;#}
+{#        option_bar2.yAxis[0].min=y_max;#}
+{#        option_bar1.yAxis[0].max=y_max;#}
+{#        option_bar2.yAxis[0].max=y_max;#}
+{#        refresh_data(option_bar1,"bar",1);#}
+{#        refresh_data(option_bar2,"bar",2);#}
         statistic=rtn_json.statistic;
         statistic_list=[statistic.type1,statistic.type2,statistic.type3,statistic.type4];
         for(var p = 0; p < 2*statistic_list.length; p++) {
@@ -238,7 +317,7 @@
                                     var object_now=data_now[j];
                                     var date_object=object_now.datatime;
                                     var value_data=-1;
-                                        value_data=object_now.negNum;
+                                    value_data=object_now.negNum;
                                     var date_of_data=new Date(date_object[0], date_object[1]-1, date_object[2], date_object[3], 0 , 0);
                                     d.push([
                                         date_of_data,
@@ -256,10 +335,10 @@
                                     var object_now=data_now[j];
                                     var date_object=object_now.datatime;
                                     var value_data=-1;
-                                        value_data=object_now.posNum;
+                                    value_data=object_now.posNum;
                                     var date_of_data=new Date(date_object[0], date_object[1]-1, date_object[2], date_object[3], 0 , 0);
                                     d.push([
-                                        date_of_data,
+                                       date_of_data,
                                         value_data
                                     ]);
                                 }

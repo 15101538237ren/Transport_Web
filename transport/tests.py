@@ -62,9 +62,7 @@ print(lower_bound_search1(table,0,len(table),num))
 print(upper_bound_search(table,0,len(table),num))
 print(upper_bound_search1(table,0,len(table),num))'''
 
-
-
-
-
+list_1 = [1,2,3,4,5]
+print(list_1[:])
 
 

@@ -109,6 +109,40 @@
 
     var group_idx=0;
     var group_len=type_count-1;
+    function HexToRgb(str)
+    {
+                var r = /^\#?[0-9a-f]{6}$/;
+                //test方法检查在字符串中是否存在一个模式，如果存在则返回true，否则返回false
+                if (!r.test(str)) return window.alert("输入错误的hex颜色值");
+                //replace替换查找的到的字符串
+                str = str.replace("#", "");
+                //match得到查询数组
+                var hxs = str.match(/../g);
+                for (var i = 0; i < 3; i++) hxs[i] = parseInt(hxs[i], 16);
+                return hxs;
+    }
+    function RgbToHex(a, b, c) {
+        var r = /^\d{1,3}$/;
+        if (!r.test(a) || !r.test(b) || !r.test(c)) return window.alert("输入错误的rgb颜色值");
+        var hexs = [a.toString(16), b.toString(16), c.toString(16)];
+        for (var i = 0; i < 3; i++) if (hexs[i].length == 1) hexs[i] = "0" + hexs[i];
+        return "#" + hexs.join("");
+    }
+    function getLightColor(color, level) {
+        var r = /^\#?[0-9a-f]{6}$/;
+        if (!r.test(color)) return window.alert("输入错误的hex颜色值");
+        var rgbc = HexToRgb(color);
+        for (var i = 0; i < 3; i++) rgbc[i] = Math.floor((255 - rgbc[i]) * level + rgbc[i]);
+        return RgbToHex(rgbc[0], rgbc[1], rgbc[2]);
+    }
+    function getDarkColor(color, level) {
+        var r = /^\#?[0-9a-f]{6}$/;
+        if (!r.test(color)) return window.alert("输入错误的hex颜色值");
+        var rgbc = HexToRgb(color);
+        //floor 向下取整
+        for (var i = 0; i < 3; i++) rgbc[i] = Math.floor(rgbc[i] * (1 - level));
+        return RgbToHex(rgbc[0], rgbc[1], rgbc[2]);
+    }
 </script>
 {% block endscript %}
 {% endblock %}
@@ -119,10 +153,43 @@
     var map = new BMap.Map("map", {});                        // 创建Map实例
     map.centerAndZoom(new BMap.Point(116.404, 39.915), 12);     // 初始化地图,设置中心点坐标和地图级别
     map.enableScrollWheelZoom(true);                        //启用滚轮放大缩小
-    var top_left_control = new BMap.ScaleControl({anchor: BMAP_ANCHOR_TOP_LEFT});// 左上角，添加比例尺
-	var top_left_navigation = new BMap.NavigationControl();  //左上角，添加默认缩放平移控件
+    var top_left_control = new BMap.ScaleControl({anchor: BMAP_ANCHOR_BOTTOM_LEFT});// 左上角，添加比例尺
+	var top_left_navigation = new BMap.NavigationControl({anchor: BMAP_ANCHOR_BOTTOM_LEFT});  //左上角，添加默认缩放平移控件
     map.addControl(top_left_control);
     map.addControl(top_left_navigation);
+    // 定义一个控件类,即function
+	function CorrControl(){
+	  // 默认停靠位置和偏移量
+	  this.defaultAnchor = BMAP_ANCHOR_TOP_LEFT;
+	  this.defaultOffset = new BMap.Size(10, 10);
+	}
+
+    // 通过JavaScript的prototype属性继承于BMap.Control
+    CorrControl.prototype = new BMap.Control();
+
+    // 自定义控件必须实现自己的initialize方法,并且将控件的DOM元素返回
+    // 在本方法中创建个div元素作为控件的容器,并将其添加到地图容器中
+    CorrControl.prototype.initialize = function(map){
+      // 创建一个DOM元素
+      var div = document.createElement("div");
+      // 添加文字说明
+      div.appendChild(document.createTextNode("相关性分析"));
+      // 设置样式
+      div.style.cursor = "pointer";
+      div.style.border = "1px solid gray";
+      div.style.backgroundColor = "white";
+      div.onclick = function(e){
+        alert("您单击了!");
+      };
+      // 添加DOM元素到地图中
+      map.getContainer().appendChild(div);
+      // 将DOM元素返回
+      return div;
+    };
+    // 创建控件
+    var myCtrl = new CorrControl();
+	// 添加到地图当中
+	map.addControl(myCtrl);
 
     var noise_invisible={{ noise_invisible }};
     if (document.createElement('canvas').getContext) {  // 判断当前浏览器是否支持绘制海量点
@@ -205,7 +272,7 @@
                 closeIcon: true,
                 confirm: function () {
                     var point_list_json_str=JSON.stringify(line_points);
-                    var addr = "/transport/area_statistics?" + "point_list="+point_list_json_str + "&data_type=1";
+                    var addr = "/transport/area_statistics?" + "point_list="+point_list_json_str + "&data_type=1&point_type={{ data_type }}";
                     $.get(addr, function (result) {
                         if (result.code == 0) {
                             handle_result_from_json(result);
@@ -267,7 +334,7 @@
                 cancelButton: '否',
                 closeIcon: true,
                 confirm: function () {
-                    var addr = "/transport/area_statistics?" + "slng=" + sw.lng + "&slat=" + sw.lat + "&elng=" + ne.lng + "&elat=" + ne.lat + "&data_type=1";
+                    var addr = "/transport/area_statistics?" + "slng=" + sw.lng + "&slat=" + sw.lat + "&elng=" + ne.lng + "&elat=" + ne.lat + "&data_type=1&point_type={{ data_type }}";
                     $.get(addr, function (result) {
                         if (result.code == 0) {
                             handle_result_from_json(result);
