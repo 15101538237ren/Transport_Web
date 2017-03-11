@@ -305,11 +305,11 @@ if __name__ == '__main__':
     out_pickle_path=STATIC_ROOT+os.sep+"WFJBXX_ORG.pkl"
     out_pickle_path_all = STATIC_ROOT+os.sep+"WFJBXX_ORG_ALL.pkl"
     #data_read_and_store(excel_path,out_pickle_path)
-    data_read_and_store(excel_path,out_pickle_path,1,0)
-    data_read_and_store(excel_path, out_pickle_path_all, 1, 1)
-    data_file=open(out_pickle_path,"rb")
-    dataset = pickle.load(data_file)  # 获取所有数据点的list
-    data_file.close()
+    #data_read_and_store(excel_path,out_pickle_path,1,0)
+    #data_read_and_store(excel_path, out_pickle_path_all, 1, 1)
+    # data_file=open(out_pickle_path,"rb")
+    # dataset = pickle.load(data_file)  # 获取所有数据点的list
+    # data_file.close()
 
     #
     # excel_exception_path = STATIC_ROOT+os.sep+"exception.xlsx"
@@ -318,10 +318,10 @@ if __name__ == '__main__':
     #
     #将road_path整个目录下的path都存储成pkl格式
     out_road_path=STATIC_ROOT+os.sep+'path.pkl'
-    road_read_and_store(ROAD_DIR,out_road_path)
+    #road_read_and_store(ROAD_DIR,out_road_path)
     out_labeled_points_path = STATIC_ROOT + os.sep + 'labeledpoints.pkl'
     label_points(out_pickle_path, out_road_path, out_labeled_points_path,1)
-    label_points(out_pickle_path, out_road_path, out_labeled_points_path,0,POINT_OUTPUT_DIR + os.sep + 'pathpoints_all.js')
+    # label_points(out_pickle_path, out_road_path, out_labeled_points_path,0,POINT_OUTPUT_DIR + os.sep + 'pathpoints_all.js')
     #
     #
     # out_exception_data_path = STATIC_ROOT + os.sep + 'exceptiondata.pkl'
