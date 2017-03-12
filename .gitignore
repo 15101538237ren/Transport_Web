@@ -2,3 +2,7 @@
 .idea
 static/
 data/
+*.txt
+*.csv
+*.zip
+

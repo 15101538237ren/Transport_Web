@@ -11,6 +11,9 @@ from os.path import normpath,join
 import pytz,copy
 from transport.json_handler import generate_option,generate_delay_option,generate_multi_option,generate_model_option
 from operator import itemgetter, attrgetter
+from transport.predict import predict
+
+
 IN_RECTANGLE_AREA = 0
 IN_POLYGON_AREA = 1
 # Create your views here.
@@ -39,7 +42,7 @@ def area_statistics(request):
     data_type = int(request.GET.get('data_type', -1))  #表示的是采用哪种json输出数据格式显示
     point_type = int(request.GET.get('point_type', 1))  #0:全部，1:应急车道，2，3，4...
     type = request.GET.get('region_type','')
-    point_list_tmp=request.POST.get('point_list',u'').encode("utf-8")
+    point_list_tmp=request.POST.get('point_list','')
     point_list = json.loads(point_list_tmp)
 
     #单独的区域进行分析
@@ -47,16 +50,20 @@ def area_statistics(request):
         min_time_size,is_corr = 1,0
         points_info_dict = single_area_statistic(point_list, point_type, data_type, min_time_size, is_corr)
         data_points_json = json.dumps(points_info_dict, sort_keys=True, indent=4)
-        #generate_option(point_type,json_file_name,"line", **points_info_dict)
+        print(data_points_json)
+        json_file_name = 'option_model_tmp.json'
+        generate_option(point_type,json_file_name,"line", **points_info_dict)
 
-        json_file_name='option_model_tmp.json'
-        data_file_path=normpath(join(BASE_DIR,'static','option')) + os.sep + "data.json"
+
+        '''data_file_path=normpath(join(BASE_DIR,'static','option')) + os.sep + "data.json"
         data_file=open(data_file_path,"r")
         json_str=data_file.read()
         data_file.close()
-        json_dict=json.loads(json_str)
-        #如果看拥堵,第一个改成0,如果看举报,第一个参数改成1
-        generate_model_option(0,json_file_name,"line", **json_dict)
+        json_dict=json.loads(json_str)'''
+        #json_dict = json.loads(data_points_json)
+
+        #如果看拥堵,第一个改成1,如果看举报,第一个参数改成0
+        #generate_model_option(0,json_file_name,"line", **json_dict)
 
         #print(data_points_json)
         addr = '/static/option/'+json_file_name
@@ -65,7 +72,11 @@ def area_statistics(request):
 
         area_points_list = point_list
         min_time_size,is_corr = 1,1
-        corr_dict = multi_area_statistic(area_points_list, point_type, data_type, min_time_size, is_corr)
+        # current use for machine learning
+        multi_area_statistic(area_points_list, point_type, data_type, min_time_size, is_corr)
+
+        #preview multi-area correlation
+        '''corr_dict = multi_area_statistic(area_points_list, point_type, data_type, min_time_size, is_corr)
 
 
         #data_points_json = json.dumps(points_info_list, indent=4)
@@ -73,7 +84,8 @@ def area_statistics(request):
         json_file_name='option_multi_tmp.json'
         generate_multi_option(point_type,json_file_name,"line", **corr_dict)
         addr = '/static/option/'+json_file_name
-        return success_response(addr)
+        return success_response(addr)'''
+        return
     elif(type=='delay'):
         delay_time = float(request.GET.get('del_time', -1))
         delay_cnt = int(request.GET.get('del_cnt', -1))
@@ -212,15 +224,48 @@ def multi_area_statistic(area_points_list, point_type, data_type, min_time_size,
     for area_list in area_points_list:   #遍历每一个区域的坐标点
         points_info_dict = get_single_area_data_points(area_list, point_type, data_type, min_time_size, is_corr)
         points_info_list.append(points_info_dict)
-        # 下面是将要进行相关性分析的序列长度变成相同的
+
+    dir = normpath(join(BASE_DIR, 'transport'))
+    f1 = open(dir + 'shun.csv', 'w')
+    f2 = open(dir + 'ni.csv', 'w')
+    print(len(points_info_list[0]['date_list']))
+    min_len = 99999999999
+    f1.write('time, ')
+    f2.write('time, ')
+    for i in range(len(points_info_list)):
+        point_dict = points_info_list[i]
+        min_len = min(min_len, len(point_dict['date_list']))
+        f1.write('x'+str(i+1)+', ')
+        f2.write('x'+str(i+1)+', ')
+
+    f1.write('\n')
+    f2.write('\n')
+    for index in range(min_len):
+        date_tmp = points_info_list[0]['date_list'][index]
+        f1.write(str(date_tmp[0])+'/'+str(date_tmp[1])+'/'+str(date_tmp[2])+'/'+str(date_tmp[3])+':00, ')
+        f2.write(str(date_tmp[0]) + '/' + str(date_tmp[1]) + '/' + str(date_tmp[2]) + '/' + str(date_tmp[3]) + ':00, ')
+        for point_dict in points_info_list:
+            neg_tmp = point_dict['type1']['negNum']
+            pos_tmp = point_dict['type1']['posNum']
+            f1.write(str(pos_tmp[index])+', ')
+            f2.write(str(neg_tmp[index])+', ')
+        f1.write('\n')
+        f2.write('\n')
+    f1.close()
+    f2.close()
+
+    predict()
+
+    #preview use for multi-area correlation analysis
+    '''
+    # 如果只有一种违章type，外层i的循环相当于只进行一次
     typemin, typemax = 1, 1
     if (point_type == 0):
         typemin, typemax = 1, 4
     else:
         typemin, typemax = point_type, point_type
-
     corr_dict = {}
-    # 如果只有一种违章type，外层i的循环相当于只进行一次
+    # 下面是将要进行相关性分析的序列长度变成相同的
     for type in range(typemin, typemax + 1):
         corr_dict['type'+str(type)] = {}
         tmp_dict = corr_dict['type' + str(type)]
@@ -229,8 +274,8 @@ def multi_area_statistic(area_points_list, point_type, data_type, min_time_size,
             # 下面是相关性分析的计算
             r_pair = calc_corr(pos_list1, pos_list2, neg_list1, neg_list2)
             tmp_dict[i] = r_pair
-
-    return corr_dict
+    return corr_dict'''
+    return JsonResponse({"code": 1, "message": 'false'})
 
 
 def delay_area_statistic(area_list, point_type, data_type, delay_cnt, min_time_size, is_corr):

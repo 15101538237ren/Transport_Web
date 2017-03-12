@@ -211,9 +211,9 @@ def generate_model_option(point_type,json_file_name,plot_type,**points_info_dict
     option_origin_path = OPTION_ROOT_DIR + os.sep + "model_origin.json"
     option = get_json_template_from(option_origin_path)
     out_option_file_path = OPTION_ROOT_DIR + os.sep + json_file_name
-    title_list=["举报量随时间变化","拥堵随时间变化"]
+    title_list=["举报量随时间变化","拥堵随时间变化","gx"]
     title_name =title_list[point_type]
-    datelist_data = points_info_dict["datatime"]
+    datelist_data = points_info_dict["date_list"]
     legend_names = title_list
     seriesDictList = generate_series_dict_model(point_type, legend_names,plot_type, datelist_data,
                                           **points_info_dict)
