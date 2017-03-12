@@ -8,5 +8,6 @@ urlpatterns = [
     url(r'^echarts', views.echarts, name='echarts'),
     url(r'^label_the_road', views.label_the_road, name='label_the_road'),
     url(r'^showpath', views.showpath, name='showpath'),
+    url(r'^heatmap', views.heatmap, name='heatmap'),
     url(r'^$', views.index, name='index'),
 ]

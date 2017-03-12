@@ -1,0 +1,279 @@
+{% load static from staticfiles %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=EmulateIE9" />
+    <title>{% block title %}{% endblock %}</title>
+    <style type="text/css">
+        html,body{
+            margin:0;
+            width:100%;
+            height:100%;
+            background:#ffffff;
+        }
+        #map{
+            width:100%;
+            height:95%;
+        }
+        #modal_dialog{
+            width:300px;
+            height:300px;
+        }
+
+
+        #navi{
+            width:100%;
+            height:5%;
+        }
+        #panel {
+            position: absolute;
+            top:30px;
+            left:10px;
+            z-index: 999;
+            color: #fff;
+        }
+    </style>
+    <!-- 写点样式，让轮播好看点 -->
+    <style>
+    ul, ol { padding: 0;}
+    .banner { position: relative; overflow: auto; text-align: center;}
+    .banner li { list-style: none; }
+    .banner ul li { float: left; }
+    #b04 { width: 640px;}
+    #b04 .dots { position: absolute; left: 0; right: 0; bottom: 20px;}
+    #b04 .dots li
+    {
+        display: inline-block;
+        width: 10px;
+        height: 10px;
+        margin: 0 4px;
+        text-indent: -999em;
+        border: 2px solid #fff;
+        border-radius: 6px;
+        cursor: pointer;
+        opacity: .4;
+        -webkit-transition: background .5s, opacity .5s;
+        -moz-transition: background .5s, opacity .5s;
+        transition: background .5s, opacity .5s;
+    }
+    #b04 .dots li.active
+    {
+        background: #fff;
+        opacity: 1;
+    }
+    #b04 .arrow { position: absolute; top: 200px;}
+    #b04 #al { left: 15px;}
+    #b04 #ar { right: 15px;}
+
+    label.legend{display:inline-block;font-weight: normal;margin-right: 5px;font-size: 12px;cursor: pointer;}
+    label.legend.disabled{color: #d3d3d3 !important;}
+    label.legend.disabled .label{background-color: #d3d3d3 !important;}
+    label.legend .label{width: 12px;height: 8px;margin-right: 5px;vertical-align: middle;margin-bottom: 2px;}
+    label.legend .label:empty{display: inline-block;}
+    </style>
+    <script type="text/javascript" src="http://api.map.baidu.com/api?v=2.0&ak=eM0GfCwd27kZRyM49ZOkvkOaidDXz6Wf"></script>
+    <link rel="stylesheet" href="{% static "css/DrawingManager_min.css" %}" />
+    <script type="text/javascript" src="{% static "js/jquery-1.11.3.min.js" %}"></script>
+    <link rel="stylesheet" type="text/css" media="screen" href="{% static "css/bootstrap.min.css" %}" />
+    <script type="text/javascript" src="{% static "js/bootstrap.min.js" %}" charset="UTF-8"></script>
+    <link rel="stylesheet" type="text/css" media="screen" href="{% static "css/font-awesome.css" %}" />
+    <link rel="stylesheet" href="{% static "css/awesome-bootstrap-checkbox.css" %}" />
+    <link rel="stylesheet" type="text/css" media="screen" href="{% static "css/jquery-confirm.min.css" %}" />
+    <script type="text/javascript" src="{% static "js/jquery-confirm.min.js" %}" charset="UTF-8"></script>
+    <script type="text/javascript" src="{% static "js/DrawingManager_min.js" %}"></script>
+    <script type="text/javascript" src="{% static "js/DrawingManager_min.js" %}"></script>
+    <script type="text/javascript" src="{% static "js/echarts3.js" %}"></script>
+<script type="text/javascript" src="{% static "js/Heatmap_min.js" %}"></script>
+    <script type="text/javascript">
+
+
+    //显示区域的统计直方图
+    function region_bar(month,region_name,week_aggregate)
+    {
+        $.ajaxSetup({
+            dataType: "json",
+            beforeSend: function (xhr, settings) {
+                xhr.setRequestHeader("X-CSRFToken", '{{ csrf_token }}');
+            }
+        });
+
+        $.ajax({
+            type: "GET",
+            url: "/transport/heatmap?region_name="+region_name +"&week_aggregate="+week_aggregate+"&month="+month,
+            success: function (result) {
+                if (result.code == 0) {
+
+                }
+            else {
+                alert(result.message);
+            }
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
+                console.table([{
+                    "错误类型": jqXHR,
+                    "错误信息": textStatus,
+                    "http状态": errorThrown
+                }])
+            }
+        });
+    }
+
+    </script>
+    {% block head %}{% endblock %}
+</head>
+
+<body>
+    {% block navigator %}
+        <nav class="navbar navbar-default" style="margin-bottom:0" id ="navi">
+          <div class="container-fluid">
+            <!-- Brand and toggle get grouped for better mobile display -->
+            <div class="navbar-header">
+              <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+              </button>
+              <a class="navbar-brand" href="{% url 'transport:heatmap' %}">北京App违法举报</a>
+            </div>
+
+            <!-- Collect the nav links, forms, and other content for toggling -->
+            <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+              <ul class="nav navbar-nav">
+                <li class="dropdown">
+                  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">月份<span class="caret"></span></a>
+                  <ul class="dropdown-menu">
+                    <li><a href="{% url 'transport:heatmap' %}?month=0">全部</a></li>
+                      {% for month_i in months %}
+                        <li><a href="{% url 'transport:heatmap' %}?month={{ month_i }}">{{ month_i }}月</a></li>
+                    {% endfor %}
+                  </ul>
+                </li>
+                  <li>
+                      <a href="javascript:void(0);" data-toggle="modal" data-target="#myModal">App举报统计</a>
+                  </li>
+              </ul>
+            </div><!-- /.navbar-collapse -->
+          </div><!-- /.container-fluid -->
+        </nav>
+    {% endblock %}
+    <div id="map">
+
+    </div>
+<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+					&times;
+				</button>
+			</div>
+			<div class="modal-body" id="modal_body">
+            <div id="echart_body" style="width: 1000px;height:600px;display: none"></div>
+            <div id="modal_inner">
+                    <div class="form-group">
+                    <label for="month" class="control-label">月份</label>
+                    <select id="month" class="form-control input-md" name="month">
+                        <option value="0" selected="selected">所有月份</option>
+                        {% for month_i in months %}
+                                <option value="{{ month_i }}">{{ month_i }}月</option>
+                        {% endfor %}
+                    </select>
+                   </div>
+                    <div class="form-group">
+                        <label for="region_name" class="control-label">区域</label>
+                        <select id="region_name" class="form-control input-md" name="region_name">
+                            {% for region_name_i in region_names %}
+                                {% ifequal forloop.counter 1 %}
+                                    <option value="{{ region_name_i }}" selected="selected">{{ region_name_i }}</option>
+                                {% else %}
+                                    <option value="{{ region_name_i }}">{{ region_name_i }}</option>
+                                {% endifequal %}
+                            {% endfor %}
+                        </select>
+                   </div>
+                    <div class="form-group">
+                        <label for="region_name" class="control-label">星期聚合</label>
+                        <select id="region_name" class="form-control input-md" name="region_name">
+                            <option value="0" selected="selected">否</option>
+                            <option value="1">是</option>
+                        </select>
+                   </div>
+                </div>
+            </div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-default" data-dismiss="modal">关闭
+				</button>
+				<button type="button" class="btn btn-primary" onclick="">
+					提交
+				</button>
+			</div>
+		</div><!-- /.modal-content -->
+	</div><!-- /.modal -->
+</div>
+
+    <script type="text/javascript" >
+    var myChart = echarts.init(document.getElementById('echart_body'));
+    var mapDiv=$("#map");
+    var map = new BMap.Map("map", {});                        // 创建Map实例
+    map.centerAndZoom(new BMap.Point(116.404, 39.915), 12);     // 初始化地图,设置中心点坐标和地图级别
+    map.enableScrollWheelZoom(true);                        //启用滚轮放大缩小
+    var top_left_control = new BMap.ScaleControl({anchor: BMAP_ANCHOR_BOTTOM_LEFT});// 左上角，添加比例尺
+	var top_left_navigation = new BMap.NavigationControl({anchor: BMAP_ANCHOR_BOTTOM_LEFT});  //左上角，添加默认缩放平移控件
+    map.addControl(top_left_control);
+    map.addControl(top_left_navigation);
+    if(!isSupportCanvas()){
+    	alert('热力图目前只支持有canvas支持的浏览器,您所使用的浏览器不能使用热力图功能~')
+    }
+	//详细的参数,可以查看heatmap.js的文档 https://github.com/pa7/heatmap.js/blob/master/README.md
+	//参数说明如下:
+	/* visible 热力图是否显示,默认为true
+     * opacity 热力的透明度,1-100
+     * radius 势力图的每个点的半径大小
+     * gradient  {JSON} 热力图的渐变区间 . gradient如下所示
+     *	{
+			.2:'rgb(0, 255, 255)',
+			.5:'rgb(0, 110, 255)',
+			.8:'rgb(100, 0, 255)'
+		}
+		其中 key 表示插值的位置, 0~1.
+		    value 为颜色值.
+     */
+	heatmapOverlay = new BMapLib.HeatmapOverlay({"radius":20});
+	map.addOverlay(heatmapOverlay);
+    var points =[];
+	heatmapOverlay.setDataSet({data:points,max:100});
+	//是否显示热力图
+    function openHeatmap(){
+        heatmapOverlay.show();
+    }
+	function closeHeatmap(){
+        heatmapOverlay.hide();
+    }
+	closeHeatmap();
+
+    function setGradient(){
+     	/*格式如下所示:
+		{
+	  		0:'rgb(102, 255, 0)',
+	 	 	.5:'rgb(255, 170, 0)',
+		  	1:'rgb(255, 0, 0)'
+		}*/
+     	var gradient = {};
+     	var colors = document.querySelectorAll("input[type='color']");
+     	colors = [].slice.call(colors,0);
+     	colors.forEach(function(ele){
+			gradient[ele.getAttribute("data-key")] = ele.value;
+     	});
+        heatmapOverlay.setOptions({"gradient":gradient});
+    }
+    //判断浏览区是否支持canvas
+    function isSupportCanvas(){
+        var elem = document.createElement('canvas');
+        return !!(elem.getContext && elem.getContext('2d'));
+    }
+    </script>
+</body>
+</html>

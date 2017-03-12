@@ -669,7 +669,14 @@ def label_the_road(request):
     road_file.write(road_json)
     return HttpResponseRedirect(reverse('transport:index'))
 
+#显示heatmap
+def heatmap(request):
+    #获取月份
+    months = range(5,13)
+    region_names = ["dongcheng","xicheng","chaoyang","haidian","shijingshan","fengtai","daxing","changping","fangshan","shunyi","tongzhou","huairou","miyun","pinggu","mentougou","yanqing"]
 
+    response = render(request,'transport/heatmap.html',locals())
+    return response
 def showpath(request):
     noise_invisible=int(request.GET.get("noise_invisible",0))
     split_show = int(request.GET.get("split_show", 0))

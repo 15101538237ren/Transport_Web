@@ -10,7 +10,6 @@ from sklearn.metrics import mean_squared_error
 from sklearn.ensemble import GradientBoostingRegressor
 
 import matplotlib.pylab as plt
-from matplotlib import style
 
 
 
