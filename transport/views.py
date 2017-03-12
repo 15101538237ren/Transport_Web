@@ -37,7 +37,14 @@ def region(request):
     data_points=get_points_in_region(table_1,slat,slng,elat,elng)
     return success_response(str(len(data_points)))
 def violation_statistics(request):
-    pass
+    region_name = request.GET.get('region_name', "chaoyang")
+    month = int(request.GET.get('month', 0))
+    week_aggregate = int(request.GET.get('week_aggregate', 0))
+
+    json_file_name='option_delay_tmp.json'
+    # generate_delay_option(point_type,json_file_name,"line", **corr_dict)
+    addr = '/static/option/'+json_file_name
+    return success_response(addr)
 
 def area_statistics(request):
     data_type = int(request.GET.get('data_type', -1))  #表示的是采用哪种json输出数据格式显示
@@ -673,9 +680,14 @@ def label_the_road(request):
 #显示heatmap
 def heatmap(request):
     #获取月份
+    month = request.GET.get('month', '')
+    if month == '':
+        month = -1
+    else:
+        month = int(month)
     months = range(5,13)
+    path_load_js_file = "/static/month_heatmap/"+str(month)+".js"
     region_names = ["dongcheng","xicheng","chaoyang","haidian","shijingshan","fengtai","daxing","changping","fangshan","shunyi","tongzhou","huairou","miyun","pinggu","mentougou","yanqing"]
-
     response = render(request,'transport/heatmap.html',locals())
     return response
 def showpath(request):

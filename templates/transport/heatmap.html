@@ -47,6 +47,10 @@
     <script type="text/javascript" src="{% static "js/DrawingManager_min.js" %}"></script>
     <script type="text/javascript" src="{% static "js/DrawingManager_min.js" %}"></script>
     <script type="text/javascript" src="{% static "js/echarts3.js" %}"></script>
+    {% ifnotequal month -1 %}
+        <script type="text/javascript" src="{{ path_load_js_file }}"></script>
+    {% endifnotequal %}
+    <script type="text/javascript" src="{% static "js/echarts3.js" %}"></script>
 <script type="text/javascript" src="{% static "js/Heatmap_min.js" %}"></script>
     <script type="text/javascript">
     function close_modal()
@@ -195,9 +199,12 @@
 		</div><!-- /.modal-content -->
 	</div><!-- /.modal -->
 </div>
-
     <script type="text/javascript" >
-
+    {% ifequal month -1 %}
+        var points =[];
+    {% endifequal %}
+    </script>
+    <script type="text/javascript" >
     var myChart = echarts.init(document.getElementById('echart_body'));
     var mapDiv=$("#map");
     var map = new BMap.Map("map", {});                        // 创建Map实例
@@ -224,10 +231,10 @@
 		其中 key 表示插值的位置, 0~1.
 		    value 为颜色值.
      */
-	heatmapOverlay = new BMapLib.HeatmapOverlay({"radius":20});
+	heatmapOverlay = new BMapLib.HeatmapOverlay({"radius":10});
 	map.addOverlay(heatmapOverlay);
-    var points =[];
-	heatmapOverlay.setDataSet({data:points,max:100});
+
+	heatmapOverlay.setDataSet({data:points,max:50});
 	//是否显示热力图
     function openHeatmap(){
         heatmapOverlay.show();
@@ -235,7 +242,7 @@
 	function closeHeatmap(){
         heatmapOverlay.hide();
     }
-	closeHeatmap();
+{#	closeHeatmap();#}
 
     function setGradient(){
      	/*格式如下所示:
