@@ -36,7 +36,8 @@ def region(request):
     table_1=table_arr[0]
     data_points=get_points_in_region(table_1,slat,slng,elat,elng)
     return success_response(str(len(data_points)))
-
+def violation_statistics(request):
+    pass
 
 def area_statistics(request):
     data_type = int(request.GET.get('data_type', -1))  #表示的是采用哪种json输出数据格式显示

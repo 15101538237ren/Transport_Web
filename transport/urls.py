@@ -9,5 +9,7 @@ urlpatterns = [
     url(r'^label_the_road', views.label_the_road, name='label_the_road'),
     url(r'^showpath', views.showpath, name='showpath'),
     url(r'^heatmap', views.heatmap, name='heatmap'),
+    url(r'^violation_statistics', views.violation_statistics, name='heaviolation_statisticstmap'),
+
     url(r'^$', views.index, name='index'),
 ]

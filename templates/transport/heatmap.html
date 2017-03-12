@@ -35,44 +35,6 @@
             color: #fff;
         }
     </style>
-    <!-- 写点样式，让轮播好看点 -->
-    <style>
-    ul, ol { padding: 0;}
-    .banner { position: relative; overflow: auto; text-align: center;}
-    .banner li { list-style: none; }
-    .banner ul li { float: left; }
-    #b04 { width: 640px;}
-    #b04 .dots { position: absolute; left: 0; right: 0; bottom: 20px;}
-    #b04 .dots li
-    {
-        display: inline-block;
-        width: 10px;
-        height: 10px;
-        margin: 0 4px;
-        text-indent: -999em;
-        border: 2px solid #fff;
-        border-radius: 6px;
-        cursor: pointer;
-        opacity: .4;
-        -webkit-transition: background .5s, opacity .5s;
-        -moz-transition: background .5s, opacity .5s;
-        transition: background .5s, opacity .5s;
-    }
-    #b04 .dots li.active
-    {
-        background: #fff;
-        opacity: 1;
-    }
-    #b04 .arrow { position: absolute; top: 200px;}
-    #b04 #al { left: 15px;}
-    #b04 #ar { right: 15px;}
-
-    label.legend{display:inline-block;font-weight: normal;margin-right: 5px;font-size: 12px;cursor: pointer;}
-    label.legend.disabled{color: #d3d3d3 !important;}
-    label.legend.disabled .label{background-color: #d3d3d3 !important;}
-    label.legend .label{width: 12px;height: 8px;margin-right: 5px;vertical-align: middle;margin-bottom: 2px;}
-    label.legend .label:empty{display: inline-block;}
-    </style>
     <script type="text/javascript" src="http://api.map.baidu.com/api?v=2.0&ak=eM0GfCwd27kZRyM49ZOkvkOaidDXz6Wf"></script>
     <link rel="stylesheet" href="{% static "css/DrawingManager_min.css" %}" />
     <script type="text/javascript" src="{% static "js/jquery-1.11.3.min.js" %}"></script>
@@ -87,11 +49,18 @@
     <script type="text/javascript" src="{% static "js/echarts3.js" %}"></script>
 <script type="text/javascript" src="{% static "js/Heatmap_min.js" %}"></script>
     <script type="text/javascript">
-
-
-    //显示区域的统计直方图
-    function region_bar(month,region_name,week_aggregate)
+    function close_modal()
     {
+        $("#modal_inner").css('display','block');
+        $("#echart_body").css('display','none');
+        $('#myModal').modal('hide');
+    }
+
+    function submit_modal()
+    {
+        var month = $("#month option:selected").val();
+        var region_name = $("#region_name option:selected").val();
+        var week_aggregate = $("#week_aggregate option:selected").val();
         $.ajaxSetup({
             dataType: "json",
             beforeSend: function (xhr, settings) {
@@ -101,10 +70,23 @@
 
         $.ajax({
             type: "GET",
-            url: "/transport/heatmap?region_name="+region_name +"&week_aggregate="+week_aggregate+"&month="+month,
+            url: "/transport/violation_statistics?region_name="+region_name +"&week_aggregate="+week_aggregate+"&month="+month,
             success: function (result) {
                 if (result.code == 0) {
-
+                    var addr=result.message;
+                    if(typeof addr != "object"){
+                        $.get(addr).done(function (rtn_json) {
+                            $("#modal_inner").css('display','none');
+                            $("#echart_body").css('display','block');
+                            //JSON.parse(rtn_json);
+                            myChart.setOption(rtn_json);
+                            myModal.modal('show');
+                        });
+                    }
+                    else
+                    {
+                        return "返回的数据格式不对!";
+                    }
                 }
             else {
                 alert(result.message);
@@ -195,8 +177,8 @@
                         </select>
                    </div>
                     <div class="form-group">
-                        <label for="region_name" class="control-label">星期聚合</label>
-                        <select id="region_name" class="form-control input-md" name="region_name">
+                        <label for="week_aggregate" class="control-label">星期聚合</label>
+                        <select id="week_aggregate" class="form-control input-md" name="week_aggregate">
                             <option value="0" selected="selected">否</option>
                             <option value="1">是</option>
                         </select>
@@ -204,9 +186,9 @@
                 </div>
             </div>
 			<div class="modal-footer">
-				<button type="button" class="btn btn-default" data-dismiss="modal">关闭
+				<button type="button" class="btn btn-default" onclick="close_modal()">关闭
 				</button>
-				<button type="button" class="btn btn-primary" onclick="">
+				<button type="button" class="btn btn-primary" onclick="submit_modal()">
 					提交
 				</button>
 			</div>
@@ -215,6 +197,7 @@
 </div>
 
     <script type="text/javascript" >
+
     var myChart = echarts.init(document.getElementById('echart_body'));
     var mapDiv=$("#map");
     var map = new BMap.Map("map", {});                        // 创建Map实例
