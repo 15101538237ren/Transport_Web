@@ -175,12 +175,23 @@ def generate_delay_series_dict(point_type,legend_names,type_of_series,**series_d
                 item["data"]=data_list_for_use[now_idx]
                 ret_arr.append(item)
     return ret_arr
+def generate_violation_option(json_file_name,plot_type,week_day,region_name,date_list,vio_data):
+    option_origin_path = OPTION_ROOT_DIR + os.sep + "violation_origin.json"
+    option = get_json_template_from(option_origin_path)
+    out_option_file_path = OPTION_ROOT_DIR + os.sep + json_file_name
+    appendix = ""
+    if week_day:
+        appendix = u"(星期聚合)"
+    title_name = region_name+u" 违法举报-时间关系" + appendix
+    put_data_into_json(option, out_option_file_path, title=title_name, legend_names=[region_name],
+                       xAxisData=date_list, seriesDictList=vio_data)
+
 def generate_option(point_type,json_file_name,plot_type,**points_info_dict):
     option_origin_path = OPTION_ROOT_DIR + os.sep + "option1_origin.json"
     option = get_json_template_from(option_origin_path)
     out_option_file_path = OPTION_ROOT_DIR + os.sep + json_file_name
     data_type_name = DATA_TYPE_DICT[point_type]
-    title_name = data_type_name + "举报量与时间的关系"
+    title_name = data_type_name + u"举报量与时间的关系"
     if point_type == 0:
         datelist_data = points_info_dict["date_list"]
         legend_names = []

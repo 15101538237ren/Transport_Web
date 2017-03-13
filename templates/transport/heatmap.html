@@ -53,10 +53,14 @@
     <script type="text/javascript" src="{% static "js/echarts3.js" %}"></script>
 <script type="text/javascript" src="{% static "js/Heatmap_min.js" %}"></script>
     <script type="text/javascript">
+    var myChart;
+    var myModal=$('#myModal');
+    var modal_body = $("#modal_body");
     function close_modal()
     {
         $("#modal_inner").css('display','block');
         $("#echart_body").css('display','none');
+        $("#btn_submit").show();
         $('#myModal').modal('hide');
     }
 
@@ -82,9 +86,9 @@
                         $.get(addr).done(function (rtn_json) {
                             $("#modal_inner").css('display','none');
                             $("#echart_body").css('display','block');
-                            //JSON.parse(rtn_json);
+                            $("#btn_submit").hide();
                             myChart.setOption(rtn_json);
-                            myModal.modal('show');
+
                         });
                     }
                     else
@@ -148,23 +152,28 @@
     <div id="map">
 
     </div>
-<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
-	<div class="modal-dialog">
-		<div class="modal-content">
+<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true" style="width: 1440px;height:800px;">
+	<div class="modal-dialog" id="modal_dialog" style="width: 1440px;height:800px;">
+		<div class="modal-content" id = "modal_content" style="width: 1440px;height:800px;">
 			<div class="modal-header">
 				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">
 					&times;
 				</button>
 			</div>
-			<div class="modal-body" id="modal_body">
-            <div id="echart_body" style="width: 1000px;height:600px;display: none"></div>
+			<div class="modal-body" id="modal_body"  style="width: 1440px;height:700px;">
+                <div id="echart_body" style="width: 1440px;height:700px;display: none">
+
+                </div>
             <div id="modal_inner">
                     <div class="form-group">
                     <label for="month" class="control-label">月份</label>
                     <select id="month" class="form-control input-md" name="month">
-                        <option value="0" selected="selected">所有月份</option>
                         {% for month_i in months %}
+                             {% ifequal forloop.counter 1 %}
+                                 <option value="{{ month_i }}" selected="selected">{{ month_i }}月</option>
+                            {% else %}
                                 <option value="{{ month_i }}">{{ month_i }}月</option>
+                            {% endifequal %}
                         {% endfor %}
                     </select>
                    </div>
@@ -188,13 +197,17 @@
                         </select>
                    </div>
                 </div>
-            </div>
-			<div class="modal-footer">
-				<button type="button" class="btn btn-default" onclick="close_modal()">关闭
+                <div class="form-group">
+                <button type="button" class="btn btn-default" onclick="close_modal()">关闭
 				</button>
-				<button type="button" class="btn btn-primary" onclick="submit_modal()">
+				<button type="button" class="btn btn-primary" id="btn_submit" onclick="submit_modal()">
 					提交
 				</button>
+            </div>
+            </div>
+
+			<div class="modal-footer">
+
 			</div>
 		</div><!-- /.modal-content -->
 	</div><!-- /.modal -->
@@ -205,7 +218,7 @@
     {% endifequal %}
     </script>
     <script type="text/javascript" >
-    var myChart = echarts.init(document.getElementById('echart_body'));
+    myChart = echarts.init(document.getElementById('echart_body'));
     var mapDiv=$("#map");
     var map = new BMap.Map("map", {});                        // 创建Map实例
     map.centerAndZoom(new BMap.Point(116.404, 39.915), 12);     // 初始化地图,设置中心点坐标和地图级别

@@ -1,10 +1,10 @@
 # coding: utf-8
-import os,xlrd,json,pickle,math,sys,datetime,pytz
+import os,xlrd,json,pickle,math,sys,datetime,pytz,csv,time,calendar
 from django.http import HttpResponse, JsonResponse
 from Transport_Web.settings import BASE_DIR,STATIC_ROOT
 from operator import itemgetter, attrgetter
-
-
+pinyin_hash = {"dongcheng" : 1, "xicheng" : 2, "chaoyang":5, "haidian":6, "fengtai":7, "shijingshan":8, "daxing":18}
+week_day_hash = {0:'Mon', 1:'Tues', 2:'Wedn', 3:'Thu',4:'Fri',5:'Sat',6:'Sun'}
 MAXINT = 999999999
 EPS = 0.000001
 ERROR_EPS = 0.00008
@@ -28,6 +28,152 @@ DIRECTION_INDEX = 3
 
 ROAD_DIR=BASE_DIR+ os.sep+'data'+ os.sep + 'input' + os.sep +'road'
 POINT_OUTPUT_DIR = BASE_DIR+ os.sep+'data'+ os.sep + 'output'
+
+def partition_time(minute, duration=10):
+    half_duration = duration / 2
+    quotient = minute / duration
+    residue = minute % duration
+    if residue >= half_duration:
+        partition_minute = duration * ( quotient + 1 )
+    else:
+        partition_minute = duration * quotient
+    return partition_minute
+def part_the_date_time(dt_str,format_dt,duration=10):
+    idt = time.strptime(dt_str,format_dt)
+    incidence_minute = partition_time(idt.tm_min,duration)
+    if idt.tm_hour ==23 and incidence_minute == 60:
+        incidence_minute = 50
+        incidence_dt = datetime.datetime(idt.tm_year,idt.tm_mon,idt.tm_mday,idt.tm_hour,incidence_minute,0,0)
+    elif incidence_minute == 60:
+        incidence_dt = datetime.datetime(idt.tm_year,idt.tm_mon,idt.tm_mday,idt.tm_hour + 1,0,0,0)
+    else:
+        incidence_dt = datetime.datetime(idt.tm_year,idt.tm_mon,idt.tm_mday,idt.tm_hour,incidence_minute,0,0)
+    return incidence_dt
+def read_violation_file_and_label_district(input_violation_file,output_label_file,path_pkl_path):
+    path_pkl_file = open(path_pkl_path,"rb")
+    roadset = pickle.load(path_pkl_file)
+
+    csvfile = open(input_violation_file,"rb")
+    reader = csv.reader(csvfile)
+    ltw_arr = []
+    for i,row in enumerate(reader):
+        if i % 10000 == 0:
+            print "handled %d lines" % i
+        # 当前读到的行的时间
+        dt_line = row[0]
+        latitude = row[1]
+        longitude = row[2]
+        if latitude.strip()!="0" and longitude.strip()!="0" and latitude.strip()!="" and longitude.strip()!="":
+            # incidence_dt = part_the_date_time(dt_line,"%Y/%m/%d %H:%M",10)
+            incidence_dt = part_the_date_time(dt_line,"%Y-%m-%d %H:%M:%S",10)
+            incidence_dt_str = incidence_dt.strftime("%Y-%m-%d %H:%M:%S")
+            lat = float(latitude)
+            lon = float(longitude)
+
+            for j in range(len(roadset)):
+                if roadset[j]["name"] in pinyin_hash.keys():
+                    if (not (roadset[j]['minX'] <= lat and lat <= roadset[j]['maxX'] and roadset[j]['minY'] <=lon and lon <= roadset[j]['maxY'])):
+                        continue
+                    data_set = roadset[j]["data"]
+                    flag = check_point(data_set,lat,lon)
+                    if flag:
+                        district = pinyin_hash[roadset[j]["name"]]
+                        ltw = incidence_dt_str + "," + str(district) + "\n"
+                        ltw_arr.append(ltw)
+                        break
+    csvfile.close()
+    output_label = open(output_label_file,"w")
+    for ltw in ltw_arr:
+        output_label.write(ltw)
+    output_label.close()
+    print "write successful!"
+def generate_str_arr_from_date_to_date(from_date,to_date,duration_minute):
+
+    dt_now = from_date
+
+    result_arr = []
+    time_delta=datetime.timedelta(minutes=duration_minute)
+    while (dt_now < to_date):
+        dt_str = dt_now.strftime("%Y-%m-%d %H:%M:%S")
+        result_arr.append(dt_str)
+        dt_now = dt_now + time_delta
+    return result_arr
+def preprocess_inmediate_file_to_standard(input_file_path,out_dir,from_date,to_date,duration_minute):
+    if not os.path.exists(out_dir):
+        os.makedirs(out_dir)
+    date_time_list = generate_str_arr_from_date_to_date(from_date,to_date,duration_minute)
+    dt_hash = {}
+
+    for (d_name,d_code) in pinyin_hash.items():
+        dt_hash[d_code] = {}
+        for dt in date_time_list:
+            dt_hash[d_code][dt] = 0
+
+    csvfile = open(input_file_path,"rb")
+    reader = csv.reader(csvfile)
+    for i,row in enumerate(reader):
+        # 当前读到的行的时间
+        dt_line = row[0]
+        region_code = int(row[1])
+        if region_code in dt_hash.keys():
+            if dt_line in dt_hash[region_code].keys():
+                dt_hash[region_code][dt_line] += 1
+    csvfile.close()
+
+    for (d_name,d_code) in pinyin_hash.items():
+        out_file = open(out_dir+os.sep+d_name+".csv","w")
+
+        for dt in date_time_list:
+            ltw = dt + "," + str(dt_hash[d_code][dt]) + "\n"
+            out_file.write(ltw)
+        out_file.close()
+
+        print "finished writing %s" % d_name
+
+def generation_weekday_data(input_dir,out_dir,district_list,time_list,zero_leagal=1):
+    if not os.path.exists(out_dir):
+        os.makedirs(out_dir)
+    for district in district_list:
+        input_file_path = input_dir + os.sep + district + ".csv"
+        output_file_path = out_dir + os.sep + district + ".csv"
+        input_file = open(input_file_path , "rb")
+        output_file = open(output_file_path , "w")
+        reader = csv.reader(input_file)
+        weekday_data = {}
+        for i,row in enumerate(reader):
+            dt_now = row[0]
+            d_val = float(row[1])
+            dt_split = dt_now.split(" ")
+            dt_now = time.strptime(dt_split[0], "%Y-%m-%d")
+            dt_time_now = dt_split[1]
+            date_now = datetime.date(dt_now.tm_year,dt_now.tm_mon,dt_now.tm_mday)
+            weekday = date_now.weekday()
+            if math.fabs(d_val) > EPS or zero_leagal:
+                if weekday not in weekday_data.keys():
+                    weekday_data[weekday] = {}
+                    weekday_data[weekday][dt_time_now] = {}
+                    weekday_data[weekday][dt_time_now]["sum"] = d_val
+                    weekday_data[weekday][dt_time_now]["size"] = 1
+                else:
+                    if dt_time_now not in weekday_data[weekday].keys():
+                       weekday_data[weekday][dt_time_now] = {}
+                       weekday_data[weekday][dt_time_now]["sum"] = d_val
+                       weekday_data[weekday][dt_time_now]["size"] = 1
+                    else:
+                        weekday_data[weekday][dt_time_now]["sum"] = weekday_data[weekday][dt_time_now]["sum"] + d_val
+                        weekday_data[weekday][dt_time_now]["size"] = weekday_data[weekday][dt_time_now]["size"] + 1
+        input_file.close()
+        #key 1 weekday
+        for weekday in range(7):
+            #key2 time
+            for time_i in time_list:
+                new_time_i= time.strptime(time_i,"%H:%M:%S")
+                new_time_i_str = time.strftime("%H:%M",new_time_i)
+                avg_val = weekday_data[weekday][time_i]["sum"]/weekday_data[weekday][time_i]["size"]
+                ltw = week_day_hash[weekday] + " " + new_time_i_str + "," + str(round(avg_val,2)) +"\n"
+                output_file.write(ltw)
+        output_file.close()
+        print "write %s successful!" %district
 
 def success_response(response=None):
     return JsonResponse({"code": 0, "message": response})
@@ -75,6 +221,7 @@ def data_read_and_store(excel_path,pickle_path,date_option = 0,all_option=1):
         table_arr = sorted(table_arr,key=itemgetter(LNG_INDEX,LAT_INDEX)) #将数据点先按照经度排序，然后再按照纬度排序
     pickle.dump(table_arr,out_pickle,-1)
     out_pickle.close()
+
 
 #读取道路的Json格式的文件
 def road_read_and_store(road_dir,pickle_path):
@@ -296,7 +443,20 @@ def poly_line_js(roads_set,roads_directions):
                     '}'
     return js_code
 
+def generate_str_arr_from_time_to_time(from_time,to_time,duration_minute,second=1):
 
+    t_now = from_time
+
+    result_arr = []
+    time_delta=datetime.timedelta(minutes=duration_minute)
+    while (t_now < to_time):
+        if second:
+            dt_str = t_now.strftime("%H:%M:%S")
+        else:
+            dt_str = t_now.strftime("%H:%M")
+        result_arr.append(dt_str)
+        t_now = t_now + time_delta
+    return result_arr
 
 
 if __name__ == '__main__':
@@ -320,7 +480,7 @@ if __name__ == '__main__':
     out_road_path=STATIC_ROOT+os.sep+'path.pkl'
     #road_read_and_store(ROAD_DIR,out_road_path)
     out_labeled_points_path = STATIC_ROOT + os.sep + 'labeledpoints.pkl'
-    label_points(out_pickle_path, out_road_path, out_labeled_points_path,1)
+    # label_points(out_pickle_path, out_road_path, out_labeled_points_path,1)
     # label_points(out_pickle_path, out_road_path, out_labeled_points_path,0,POINT_OUTPUT_DIR + os.sep + 'pathpoints_all.js')
     #
     #
@@ -329,3 +489,23 @@ if __name__ == '__main__':
     # #label_points(out_exception_pickle_path, out_road_path, out_exception_data_path,0,out_exception_js_path)
     #roads_set,roads_directions=get_all_paths()
     #poly_line_js(roads_set,roads_directions)
+
+    months = range(5,13)
+    year= 2016
+    path_pkl_file = "../data" + os.sep+ "boundary.pkl"
+    for month in months:
+        input_violation_file ="../static" + os.sep + "month_heatmap" + os.sep + str(month)+".csv"
+        output_label_file = "../data" + os.sep + "processed_monthdata" + os.sep + str(month)+".csv"
+        # read_violation_file_and_label_district(input_violation_file,output_label_file,path_pkl_file)
+        duration_minute = 10
+        tz=pytz.timezone('Asia/Shanghai')
+        firstDayWeekDay, monthRange = calendar.monthrange(year, month)
+        from_date = datetime.datetime(year,month,1,0,0,0,0,tzinfo=tz)
+        to_date = datetime.datetime(year,month,monthRange,23,59,59,0,tzinfo=tz)
+        outdir = "../data" + os.sep + "processed_monthdata" + os.sep + str(month)
+        # preprocess_inmediate_file_to_standard(output_label_file,outdir,from_date,to_date,duration_minute)
+        from_date_end = datetime.datetime(year,month,1,23,59,59,0,tzinfo=tz)
+        time_list = generate_str_arr_from_time_to_time(from_date,from_date_end,duration_minute)
+        zero_leagal = 1
+        week_day_out_dir = "../data" + os.sep + "week_processed_monthdata" + os.sep + str(month)
+        generation_weekday_data(outdir,week_day_out_dir,pinyin_hash.keys(),time_list,zero_leagal=zero_leagal)

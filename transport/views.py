@@ -8,15 +8,17 @@ from Transport_Web.settings import STATIC_ROOT
 from django.views.decorators.http import require_GET, require_POST
 from transport.direction import *
 from os.path import normpath,join
-import pytz,copy
-from transport.json_handler import generate_option,generate_delay_option,generate_multi_option,generate_model_option
+import pytz,copy,csv,time
+from transport.json_handler import generate_option,generate_delay_option,generate_multi_option,generate_model_option,generate_violation_option
 from operator import itemgetter, attrgetter
 from transport.predict import predict
-
+pinyin_hash = {"dongcheng" : 1, "xicheng" : 2, "chaoyang":5, "haidian":6, "fengtai":7, "shijingshan":8, "daxing":18}
 
 IN_RECTANGLE_AREA = 0
 IN_POLYGON_AREA = 1
 # Create your views here.
+
+
 def index(request):
     roads_set,roads_directions=get_all_paths()
     polyline_js_code=poly_line_js(roads_set,roads_directions)
@@ -36,13 +38,38 @@ def region(request):
     table_1=table_arr[0]
     data_points=get_points_in_region(table_1,slat,slng,elat,elng)
     return success_response(str(len(data_points)))
+def get_date_list_and_data(input_file_path,region_name,type):
+    csvfile = open(input_file_path,"rb")
+    reader = csv.reader(csvfile)
+    data_dict = {}
+    data_dict["name"]=region_name
+    data_dict["type"] = type
+    date_list = []
+    data_list = []
+    for i,row in enumerate(reader):
+        date_time = row[0]
+        date_time_splt = date_time.split(" ")
+        date_time_tmp = date_time_splt[0]+"\n"+date_time_splt[1]
+        date_list.append(date_time_tmp)
+        violation_cnt = float(row[1])
+        data_list.append(violation_cnt)
+    data_dict["data"]= data_list
+    return date_list,[data_dict]
 def violation_statistics(request):
     region_name = request.GET.get('region_name', "chaoyang")
     month = int(request.GET.get('month', 0))
     week_aggregate = int(request.GET.get('week_aggregate', 0))
 
-    json_file_name='option_delay_tmp.json'
-    # generate_delay_option(point_type,json_file_name,"line", **corr_dict)
+    dir_name = "processed_monthdata"
+    if week_aggregate:
+        dir_name = "week_processed_monthdata"
+
+    input_file_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))+os.sep+"data" + os.sep +dir_name + os.sep + str(month)+ os.sep +region_name+".csv"
+    type = "bar"
+    date_list,vio_data = get_date_list_and_data(input_file_path,region_name,type)
+
+    json_file_name='violation_option_tmp.json'
+    generate_violation_option(json_file_name,type,week_aggregate,region_name,date_list,vio_data)
     addr = '/static/option/'+json_file_name
     return success_response(addr)
 
@@ -687,7 +714,7 @@ def heatmap(request):
         month = int(month)
     months = range(5,13)
     path_load_js_file = "/static/month_heatmap/"+str(month)+".js"
-    region_names = ["dongcheng","xicheng","chaoyang","haidian","shijingshan","fengtai","daxing","changping","fangshan","shunyi","tongzhou","huairou","miyun","pinggu","mentougou","yanqing"]
+    region_names = pinyin_hash.keys()
     response = render(request,'transport/heatmap.html',locals())
     return response
 def showpath(request):
