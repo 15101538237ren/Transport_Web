@@ -26,7 +26,7 @@ def index(request):
     anti_clockwise=direction(-1,u"逆时针")
     directions=[clockwise,anti_clockwise]
     noise_invisible=1
-    return render(request, 'transport/test.html',locals())
+    return render(request, 'transport/baidu.html',locals())
 def region(request):
     slat=float(request.GET.get("slat"))
     slng=float(request.GET.get("slng"))
